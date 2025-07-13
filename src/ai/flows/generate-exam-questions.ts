@@ -23,6 +23,7 @@ export type GenerateExamQuestionsInput = z.infer<typeof GenerateExamQuestionsInp
 const GeneratedQuestionSchema = z.object({
   question: z.string().describe('The generated exam question.'),
   isAiGenerated: z.boolean().describe('Whether the question is fully AI-generated or based on a past paper.'),
+  highlightedQuestion: z.string().describe('The exam question with AI-generated parts highlighted in bold markdown (`**text**`).'),
 });
 
 const GenerateExamQuestionsOutputSchema = z.object({
@@ -50,7 +51,9 @@ Topic: {{{topic}}}
 Pattern Summary: {{{patternSummary}}}
 Number of Questions: {{{numQuestions}}}
 
-Generate exam questions that are similar in style and difficulty to those found in past papers, considering the identified patterns. For each question, indicate whether it is fully AI-generated or based on a past paper.
+Generate exam questions that are similar in style and difficulty to those found in past papers, considering the identified patterns. 
+For each question, indicate whether it is fully AI-generated or based on a past paper.
+Also, provide a version of the question where the AI-generated parts are highlighted in bold markdown. For example: "What is the **capital of France** and its **primary export**?".
 
 Output the questions in the following JSON format:
 {{$responseSchema}}`,

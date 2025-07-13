@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { handleGenerateQuestions } from "@/app/actions";
 import type { AnalyzeExamPatternsOutput } from "@/ai/flows/analyze-exam-patterns";
 import type { GenerateExamQuestionsOutput } from "@/ai/flows/generate-exam-questions";
+import React from 'react';
 
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +22,20 @@ type QuestionGeneratorProps = {
     };
     onReset: () => void;
 };
+
+function HighlightedQuestion({ text }: { text: string }) {
+    const parts = text.split(/(\*\*.*?\*\*)/g);
+    return (
+        <p>
+            {parts.map((part, index) => {
+                if (part.startsWith('**') && part.endsWith('**')) {
+                    return <strong key={index} className="text-primary">{part.slice(2, -2)}</strong>;
+                }
+                return part;
+            })}
+        </p>
+    );
+}
 
 export default function QuestionGenerator({ analysisContext, onReset }: QuestionGeneratorProps) {
     const { result: analysisResult, subject } = analysisContext;
@@ -195,7 +210,7 @@ export default function QuestionGenerator({ analysisContext, onReset }: Question
                                   )}
                                 </CardHeader>
                                 <CardContent>
-                                    <p>{q.question}</p>
+                                    <HighlightedQuestion text={q.highlightedQuestion} />
                                 </CardContent>
                             </Card>
                         ))}
