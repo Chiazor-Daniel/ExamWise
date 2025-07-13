@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Wand2, RefreshCw, Sparkles, ListTree, Lightbulb, TestTube2, Sigma, BookOpenText } from "lucide-react";
+import { Loader2, Wand2, RefreshCw, Sparkles, ListTree, CalendarClock, Lightbulb, TestTube2, Sigma, BookOpenText } from "lucide-react";
 import { Skeleton } from "./ui/skeleton";
 
 type QuestionGeneratorProps = {
@@ -77,10 +77,19 @@ export default function QuestionGenerator({ analysisContext, onReset }: Question
         }
     };
 
+    const yearRange = useMemo(() => {
+        if (analysisResult.startYear && analysisResult.endYear) {
+            return `${analysisResult.startYear} - ${analysisResult.endYear}`;
+        }
+        if (analysisResult.startYear) return `From ${analysisResult.startYear}`;
+        if (analysisResult.endYear) return `Up to ${analysisResult.endYear}`;
+        return 'N/A';
+    }, [analysisResult.startYear, analysisResult.endYear]);
+
     return (
         <div className="space-y-8">
             <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
+                <CardHeader className="flex flex-row items-start sm:items-center justify-between">
                     <div>
                         <CardTitle className="font-headline text-2xl flex items-center gap-2">
                             <ListTree className="h-6 w-6 text-primary" />
@@ -90,12 +99,17 @@ export default function QuestionGenerator({ analysisContext, onReset }: Question
                             Here are the key insights from the exam papers for <span className="font-semibold text-primary">{subject}</span>.
                         </CardDescription>
                     </div>
-                    <Button variant="outline" onClick={onReset}>
+                    <Button variant="outline" onClick={onReset} className="mt-2 sm:mt-0">
                         <RefreshCw className="mr-2 h-4 w-4" />
                         Start Over
                     </Button>
                 </CardHeader>
                 <CardContent>
+                    <div className="mb-4 flex items-center gap-2 text-sm text-muted-foreground p-3 bg-muted/50 rounded-lg">
+                        <CalendarClock className="h-5 w-5 text-primary"/>
+                        <span className="font-semibold text-foreground">Detected Paper Years:</span>
+                        <span>{yearRange}</span>
+                    </div>
                     <Accordion type="single" collapsible defaultValue="item-1">
                         <AccordionItem value="item-1">
                             <AccordionTrigger className="font-semibold">Frequently Asked Topics</AccordionTrigger>

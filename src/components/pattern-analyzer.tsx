@@ -11,9 +11,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Wand2, FlaskConical, Dna, Sigma, BookOpenText, Lightbulb } from "lucide-react";
+import { Loader2, Wand2, FlaskConical, Dna, Sigma, BookOpenText, Lightbulb, Upload, FileText } from "lucide-react";
 
 const subjects = [
     { value: "Physics", label: "Physics", icon: Lightbulb },
@@ -25,7 +25,9 @@ const subjects = [
 
 const formSchema = z.object({
     subject: z.string({ required_error: "Please select a subject." }).min(1, "Please select a subject."),
-    examPapers: z.string().min(100, "Please provide at least 100 characters of past paper content for analysis."),
+    examPapers: z.custom<FileList>()
+      .refine((files) => files?.length > 0, 'At least one PDF file is required.')
+      .refine((files) => Array.from(files).every((file) => file.type === 'application/pdf'), 'Only PDF files are allowed.'),
 });
 
 type FormSchema = z.infer<typeof formSchema>;
@@ -34,32 +36,55 @@ type PatternAnalyzerProps = {
     onAnalysisComplete: (result: AnalyzeExamPatternsOutput, subject: string) => void;
 };
 
+const toDataURL = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+};
+
 export default function PatternAnalyzer({ onAnalysisComplete }: PatternAnalyzerProps) {
     const [isLoading, setIsLoading] = useState(false);
+    const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
     const { toast } = useToast();
 
     const form = useForm<FormSchema>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             subject: "",
-            examPapers: "",
         },
     });
 
     async function onSubmit(values: FormSchema) {
         setIsLoading(true);
-        const result = await handleAnalyzePatterns(values);
-        setIsLoading(false);
 
-        if (result.success && result.data) {
-            toast({ title: "Analysis Complete", description: "Patterns and topics identified successfully." });
-            onAnalysisComplete(result.data, values.subject);
-        } else {
-            toast({
-                variant: "destructive",
-                title: "Analysis Failed",
-                description: result.error,
+        try {
+            const dataUris = await Promise.all(Array.from(values.examPapers).map(toDataURL));
+            const result = await handleAnalyzePatterns({
+                subject: values.subject,
+                examPaperUris: dataUris,
             });
+
+            if (result.success && result.data) {
+                toast({ title: "Analysis Complete", description: "Patterns and topics identified successfully." });
+                onAnalysisComplete(result.data, values.subject);
+            } else {
+                toast({
+                    variant: "destructive",
+                    title: "Analysis Failed",
+                    description: result.error,
+                });
+            }
+        } catch (error) {
+             toast({
+                variant: "destructive",
+                title: "File Error",
+                description: "Could not read the uploaded files. Please try again.",
+            });
+        } finally {
+            setIsLoading(false);
         }
     }
 
@@ -71,7 +96,7 @@ export default function PatternAnalyzer({ onAnalysisComplete }: PatternAnalyzerP
                     <span>Step 1: Analyze Exam Patterns</span>
                 </CardTitle>
                 <CardDescription>
-                    Paste content from past exam papers for a subject and our AI will identify key patterns and topics.
+                    Upload past exam papers (PDFs) for a subject and our AI will identify key patterns and topics.
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -109,15 +134,46 @@ export default function PatternAnalyzer({ onAnalysisComplete }: PatternAnalyzerP
                             name="examPapers"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Past Paper Content</FormLabel>
+                                    <FormLabel>Past Exam Papers (PDFs)</FormLabel>
                                     <FormControl>
-                                        <Textarea
-                                            placeholder="Paste the text from one or more past exam papers here..."
-                                            className="min-h-[250px] resize-y"
-                                            {...field}
-                                        />
+                                        <div className="relative">
+                                            <Input
+                                                type="file"
+                                                multiple
+                                                accept="application/pdf"
+                                                className="hidden"
+                                                id="file-upload"
+                                                onChange={(e) => {
+                                                    field.onChange(e.target.files);
+                                                    setUploadedFiles(e.target.files ? Array.from(e.target.files) : []);
+                                                }}
+                                            />
+                                            <label
+                                                htmlFor="file-upload"
+                                                className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed rounded-lg cursor-pointer bg-card hover:bg-muted"
+                                            >
+                                                <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                                    <Upload className="w-10 h-10 mb-3 text-muted-foreground" />
+                                                    <p className="mb-2 text-sm text-muted-foreground">
+                                                        <span className="font-semibold">Click to upload</span> or drag and drop
+                                                    </p>
+                                                    <p className="text-xs text-muted-foreground">PDF files only</p>
+                                                </div>
+                                            </label>
+                                        </div>
                                     </FormControl>
                                     <FormMessage />
+                                    {uploadedFiles.length > 0 && (
+                                        <div className="mt-2 space-y-1 text-sm text-muted-foreground">
+                                            <p className="font-medium text-foreground">Uploaded files:</p>
+                                            {uploadedFiles.map((file, index) => (
+                                                <div key={index} className="flex items-center gap-2">
+                                                  <FileText className="h-4 w-4" />
+                                                  <span>{file.name}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </FormItem>
                             )}
                         />
