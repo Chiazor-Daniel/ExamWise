@@ -5,26 +5,16 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { handleAnalyzePatterns } from "@/app/actions";
-import type { AnalyzeExamPatternsOutput } from "@/ai/flows/analyze-exam-patterns";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, Wand2, FlaskConical, Dna, Sigma, BookOpenText, Lightbulb, Upload, FileText } from "lucide-react";
-
-const subjects = [
-    { value: "Physics", label: "Physics", icon: Lightbulb },
-    { value: "Chemistry", label: "Chemistry", icon: FlaskConical },
-    { value: "Biology", label: "Biology", icon: Dna },
-    { value: "Mathematics", label: "Mathematics", icon: Sigma },
-    { value: "English", label: "English", icon: BookOpenText },
-] as const;
+import { Loader2, Wand2, Upload, FileText } from "lucide-react";
 
 const formSchema = z.object({
-    subject: z.string({ required_error: "Please select a subject." }).min(1, "Please select a subject."),
+    subject: z.string().min(2, { message: "Subject must be at least 2 characters." }),
     examPapers: z.custom<FileList>()
       .refine((files) => files?.length > 0, 'At least one PDF file is required.')
       .refine((files) => Array.from(files).every((file) => file.type === 'application/pdf'), 'Only PDF files are allowed.'),
@@ -33,7 +23,7 @@ const formSchema = z.object({
 type FormSchema = z.infer<typeof formSchema>;
 
 type PatternAnalyzerProps = {
-    onAnalysisComplete: (result: AnalyzeExamPatternsOutput, subject: string) => void;
+    onAnalysisComplete: (subject: string) => void;
 };
 
 const toDataURL = (file: File): Promise<string> => {
@@ -68,8 +58,10 @@ export default function PatternAnalyzer({ onAnalysisComplete }: PatternAnalyzerP
             });
 
             if (result.success && result.data) {
-                toast({ title: "Analysis Complete", description: "Patterns and topics identified successfully." });
-                onAnalysisComplete(result.data, values.subject);
+                toast({ title: "Analysis Complete", description: `Subject '${values.subject}' analyzed and saved successfully.` });
+                onAnalysisComplete(values.subject);
+                form.reset();
+                setUploadedFiles([]);
             } else {
                 toast({
                     variant: "destructive",
@@ -93,10 +85,10 @@ export default function PatternAnalyzer({ onAnalysisComplete }: PatternAnalyzerP
             <CardHeader>
                 <CardTitle className="font-headline text-2xl flex items-center gap-2">
                     <Wand2 className="h-6 w-6 text-primary" />
-                    <span>Step 1: Analyze Exam Patterns</span>
+                    <span>Analyze a New Subject</span>
                 </CardTitle>
                 <CardDescription>
-                    Upload past exam papers (PDFs) for a subject and our AI will identify key patterns and topics.
+                    Upload past exam papers (PDFs) for a subject. The AI will analyze them and save the results.
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -107,24 +99,10 @@ export default function PatternAnalyzer({ onAnalysisComplete }: PatternAnalyzerP
                             name="subject"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Subject</FormLabel>
-                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                        <FormControl>
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select a subject to analyze" />
-                                            </SelectTrigger>
-                                        </FormControl>
-                                        <SelectContent>
-                                            {subjects.map((subject) => (
-                                                <SelectItem key={subject.value} value={subject.value}>
-                                                    <div className="flex items-center gap-2">
-                                                        <subject.icon className="h-4 w-4" />
-                                                        <span>{subject.label}</span>
-                                                    </div>
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                    <FormLabel>Subject Name</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="e.g. Physics" {...field} />
+                                    </FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -184,7 +162,7 @@ export default function PatternAnalyzer({ onAnalysisComplete }: PatternAnalyzerP
                                     Analyzing...
                                 </>
                             ) : (
-                                "Analyze Patterns"
+                                "Analyze & Save Subject"
                             )}
                         </Button>
                     </form>

@@ -1,22 +1,53 @@
 import type { ReactNode } from 'react';
-import { Lightbulb } from 'lucide-react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { Lightbulb, BookCopy, Settings } from 'lucide-react';
+import { Sidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarTrigger, SidebarInset } from '@/components/ui/sidebar';
+import { cn } from '@/lib/utils';
+
+const navItems = [
+    { href: '/', label: 'Exam Generator', icon: BookCopy },
+    { href: '/manage', label: 'Manage Subjects', icon: Settings },
+];
 
 export default function AppLayout({ children }: { children: ReactNode }) {
-  return (
-    <div className="min-h-screen bg-background font-body text-foreground">
-      <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center space-x-4 sm:justify-between sm:space-x-0">
-          <div className="flex gap-2 items-center">
-            <Lightbulb className="h-6 w-6 text-primary" />
-            <h1 className="text-2xl font-bold text-primary font-headline">ExamWise</h1>
-          </div>
+    const pathname = usePathname();
+
+    return (
+        <div className="flex min-h-screen w-full flex-col">
+            <Sidebar>
+                <SidebarHeader>
+                    <div className="flex gap-2 items-center p-2">
+                        <Lightbulb className="h-6 w-6 text-primary" />
+                        <h1 className="text-xl font-bold text-primary font-headline">ExamWise</h1>
+                    </div>
+                </SidebarHeader>
+                <SidebarContent>
+                    <SidebarMenu>
+                        {navItems.map((item) => (
+                            <SidebarMenuItem key={item.href}>
+                                <Link href={item.href} legacyBehavior passHref>
+                                    <SidebarMenuButton asChild isActive={pathname === item.href}>
+                                        <a>
+                                            <item.icon />
+                                            <span>{item.label}</span>
+                                        </a>
+                                    </SidebarMenuButton>
+                                </Link>
+                            </SidebarMenuItem>
+                        ))}
+                    </SidebarMenu>
+                </SidebarContent>
+            </Sidebar>
+
+            <SidebarInset>
+                 <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:static sm:h-auto sm:border-0 sm:bg-transparent sm:px-6">
+                    <SidebarTrigger className="md:hidden" />
+                 </header>
+                 <main className="flex-1">
+                    {children}
+                 </main>
+            </SidebarInset>
         </div>
-      </header>
-      <main>
-        <div className="container mx-auto">
-          {children}
-        </div>
-      </main>
-    </div>
-  );
+    );
 }

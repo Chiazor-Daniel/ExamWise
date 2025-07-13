@@ -23,7 +23,7 @@ const GeneratedQuestionSchema = z.object({
     .describe(
       'The exam question with AI-generated parts highlighted in bold markdown (`**text**`). Image placeholders should be included, e.g., `[Image of a physics diagram]`.'
     ),
-  options: z.array(z.string()).describe('An array of multiple-choice options.'),
+  options: z.array(z.string()).describe('An array of four multiple-choice options.'),
   correctAnswer: z.string().describe('The correct answer from the options.'),
   imageDescription: z
     .string()
@@ -91,8 +91,7 @@ Instructions:
 4.  For each question, indicate if it's purely AI-generated or based on a past paper style.
 5.  Provide a 'highlightedQuestion' version where AI-generated parts are in bold markdown.
 
-Output the questions in the following JSON format:
-{{$responseSchema}}`,
+Output the questions in the specified JSON format.`,
 });
 
 const generateExamQuestionsFlow = ai.defineFlow(

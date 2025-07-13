@@ -1,44 +1,171 @@
 "use client";
 
-import { useState } from 'react';
-import type { AnalyzeExamPatternsOutput } from '@/ai/flows/analyze-exam-patterns';
+import { useEffect, useState, useMemo } from "react";
+import { getAvailableSubjects, handleGenerateQuestions } from "@/app/actions";
+import type { GenerateExamQuestionsOutput } from "@/ai/flows/generate-exam-questions";
 import AppLayout from '@/components/app-layout';
-import PatternAnalyzer from '@/components/pattern-analyzer';
-import QuestionGenerator from '@/components/question-generator';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Lightbulb } from 'lucide-react';
+import QuestionDisplay from "@/components/question-display";
+
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
+import { Loader2, BookCopy, Sparkles } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Home() {
-  const [analysisContext, setAnalysisContext] = useState<{ result: AnalyzeExamPatternsOutput; subject: string } | null>(null);
-  const [analysisKey, setAnalysisKey] = useState(0); 
+    const [isGenerating, setIsGenerating] = useState(false);
+    const [subjects, setSubjects] = useState<string[]>([]);
+    const [selectedSubject, setSelectedSubject] = useState<string>("");
+    const [targetYear, setTargetYear] = useState<string>(String(new Date().getFullYear() + 1));
+    const [generatedExam, setGeneratedExam] = useState<GenerateExamQuestionsOutput | null>(null);
+    const [isLoadingSubjects, setIsLoadingSubjects] = useState(true);
 
-  const handleAnalysisComplete = (result: AnalyzeExamPatternsOutput, subject: string) => {
-    setAnalysisContext({ result, subject });
-  };
+    const { toast } = useToast();
 
-  const handleReset = () => {
-    setAnalysisContext(null);
-    setAnalysisKey(prevKey => prevKey + 1);
-  };
+    useEffect(() => {
+        async function fetchSubjects() {
+            setIsLoadingSubjects(true);
+            const result = await getAvailableSubjects();
+            if (result.success && result.data) {
+                setSubjects(result.data);
+            } else {
+                toast({
+                    variant: "destructive",
+                    title: "Failed to load subjects",
+                    description: result.error,
+                });
+            }
+            setIsLoadingSubjects(false);
+        }
+        fetchSubjects();
+    }, [toast]);
 
-  return (
-    <AppLayout>
-      <div className="flex-1 space-y-8 p-4 md:p-8">
-        <div className="flex items-center justify-between space-y-2">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight font-headline">ExamWise Dashboard</h1>
-            <p className="text-muted-foreground">
-              Analyze past papers and generate practice questions with AI.
-            </p>
-          </div>
-        </div>
-        
-        {analysisContext ? (
-          <QuestionGenerator analysisContext={analysisContext} onReset={handleReset} />
-        ) : (
-          <PatternAnalyzer key={analysisKey} onAnalysisComplete={handleAnalysisComplete} />
-        )}
-      </div>
-    </AppLayout>
-  );
+    const handleGenerate = async () => {
+        const year = parseInt(targetYear, 10);
+        if (!selectedSubject) {
+            toast({ variant: 'destructive', title: 'Please select a subject.' });
+            return;
+        }
+        if (isNaN(year) || year < 2000) {
+            toast({ variant: 'destructive', title: 'Invalid Year', description: 'Please enter a valid year (e.g., 2025).' });
+            return;
+        }
+
+        setIsGenerating(true);
+        setGeneratedExam(null);
+
+        const result = await handleGenerateQuestions({
+            subject: selectedSubject,
+            year: year,
+        });
+        setIsGenerating(false);
+
+        if (result.success && result.data) {
+            setGeneratedExam(result.data);
+            toast({
+                title: "Exam Generated!",
+                description: `A mock exam for ${selectedSubject} ${year} has been created.`,
+            });
+        } else {
+            toast({
+                variant: "destructive",
+                title: "Generation Failed",
+                description: result.error,
+            });
+        }
+    };
+
+    return (
+        <AppLayout>
+            <div className="flex-1 space-y-8 p-4 md:p-8">
+                <div className="flex items-center justify-between space-y-2">
+                    <div>
+                        <h1 className="text-3xl font-bold tracking-tight font-headline">Exam Generator</h1>
+                        <p className="text-muted-foreground">
+                            Select a subject and year to generate a practice exam.
+                        </p>
+                    </div>
+                </div>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="font-headline text-2xl flex items-center gap-2">
+                            <BookCopy className="h-6 w-6 text-primary" />
+                            <span>Generate Mock Exam</span>
+                        </CardTitle>
+                        <CardDescription>
+                           Select from a pre-analyzed subject, enter a target year, and generate a full mock exam.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                            <div className="space-y-2">
+                                <Label>Subject</Label>
+                                {isLoadingSubjects ? (
+                                    <Skeleton className="h-10 w-full" />
+                                ) : (
+                                    <Select onValueChange={setSelectedSubject} value={selectedSubject}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select a subject" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {subjects.length > 0 ? subjects.map((subject) => (
+                                                <SelectItem key={subject} value={subject}>
+                                                    {subject}
+                                                </SelectItem>
+                                            )) : <SelectItem value="None" disabled>No subjects analyzed yet</SelectItem>}
+                                        </SelectContent>
+                                    </Select>
+                                )}
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="year-input">Target Year</Label>
+                                <Input
+                                    id="year-input"
+                                    type="number"
+                                    value={targetYear}
+                                    onChange={(e) => setTargetYear(e.target.value)}
+                                    placeholder="e.g., 2025"
+                                />
+                            </div>
+                        </div>
+                        <Button onClick={handleGenerate} disabled={isGenerating || isLoadingSubjects || subjects.length === 0} className="bg-accent hover:bg-accent/90 text-accent-foreground w-full sm:w-auto">
+                            {isGenerating ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Generating Exam...
+                                </>
+                            ) : (
+                                "Generate Exam"
+                            )}
+                        </Button>
+                    </CardContent>
+                </Card>
+
+                {isGenerating && (
+                    <div className="space-y-4">
+                         <Card>
+                            <CardHeader>
+                                <Skeleton className="h-8 w-1/2" />
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-32 w-full" />)}
+                            </CardContent>
+                        </Card>
+                    </div>
+                )}
+                
+                {generatedExam && (
+                    <QuestionDisplay 
+                        examData={generatedExam} 
+                        subject={selectedSubject} 
+                        year={targetYear} 
+                    />
+                )}
+            </div>
+        </AppLayout>
+    );
 }
