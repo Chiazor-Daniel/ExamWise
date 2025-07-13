@@ -85,13 +85,14 @@ Past Paper Analysis Summary:
 {{{patternSummary}}}
 
 Instructions:
-1.  Generate a full exam paper that mimics the structure, style, difficulty, and number of questions typically found in the past papers.
-2.  For each question, provide 4 multiple-choice options and indicate the correct answer.
+1.  Generate exactly 40 unique multiple-choice exam questions that mimic the structure, style, and difficulty typically found in the past papers.
+2.  For each question, provide exactly 4 multiple-choice options and indicate the correct answer. The options must be distinct and plausible.
 3.  If a question requires a diagram or image, create a concise description for an AI image generator in the 'imageDescription' field. For example: "A diagram of the human heart with labels for the four chambers". Also, include a placeholder in the question text, like "[Image of the human heart]".
 4.  For each question, indicate if it's purely AI-generated or based on a past paper style.
 5.  Provide a 'highlightedQuestion' version where AI-generated parts are in bold markdown.
+6.  Crucially, the 'question' and 'highlightedQuestion' fields must NOT contain the multiple-choice options. The options should only be in the 'options' array.
 
-Output the questions in the specified JSON format.`,
+Output exactly 40 questions in the specified JSON format.`,
 });
 
 const generateExamQuestionsFlow = ai.defineFlow(
@@ -106,7 +107,14 @@ const generateExamQuestionsFlow = ai.defineFlow(
       throw new Error('Failed to generate questions');
     }
 
-    const imageGenerationPromises = generated.questions.map(async (question) => {
+    // Filter out malformed questions
+    const validQuestions = generated.questions.filter(q => {
+        const hasFourOptions = q.options && q.options.length === 4 && q.options.every(opt => typeof opt === 'string' && opt.trim() !== '');
+        const isCorrectAnswerValid = hasFourOptions && q.options.includes(q.correctAnswer);
+        return hasFourOptions && isCorrectAnswerValid;
+    });
+
+    const imageGenerationPromises = validQuestions.map(async (question) => {
       if (question.imageDescription) {
         try {
           const {media} = await ai.generate({

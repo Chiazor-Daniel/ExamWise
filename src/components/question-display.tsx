@@ -106,7 +106,7 @@ export default function QuestionDisplay({ examData, subject, year }: QuestionDis
                                 onValueChange={(value) => handleAnswerChange(index, value)}
                                 disabled={showResults}
                             >
-                                {q.options.map((option, optionIndex) => {
+                                {q.options.filter(opt => opt !== undefined && opt !== null).map((option, optionIndex) => {
                                     const isCorrectAnswer = showResults && option === q.correctAnswer;
                                     const isWrongSelection = showResults && option === q.userAnswer && !q.isCorrect;
                                     
