@@ -1,14 +1,14 @@
 
 "use client";
 
-import React, { useRef, useState, useEffect } from 'react';
+import React from 'react';
 import type { GeneratedQuestion } from "@/types/exam-types";
 import type { SolveQuestionOutput } from '@/types/exam-types';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogClose } from "@/components/ui/dialog";
 import { Skeleton } from './ui/skeleton';
-import { Badge } from './ui/badge';
-import { AlertCircle, Volume2, CheckCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle } from 'lucide-react';
 import { Button } from './ui/button';
+import { X } from 'lucide-react';
 
 interface QuestionSolverDialogProps {
     question: GeneratedQuestion;
@@ -23,83 +23,18 @@ interface QuestionSolverDialogProps {
 }
 
 export function QuestionSolverDialog({ question, questionNumber, state, open, onOpenChange }: QuestionSolverDialogProps) {
-    const dialogRef = useRef<HTMLDivElement>(null);
-    const [position, setPosition] = useState({ x: 0, y: 0 });
-    const [isDragging, setIsDragging] = useState(false);
-    const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-
-    useEffect(() => {
-        // Center the dialog initially when it opens
-        if (open && dialogRef.current) {
-            const { innerWidth, innerHeight } = window;
-            const { offsetWidth, offsetHeight } = dialogRef.current;
-            setPosition({
-                x: (innerWidth - offsetWidth) / 2,
-                y: (innerHeight - offsetHeight) / 2
-            });
-        }
-    }, [open]);
-
-    const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-        if (dialogRef.current) {
-            setIsDragging(true);
-            setDragStart({
-                x: e.clientX - position.x,
-                y: e.clientY - position.y
-            });
-        }
-    };
-
-    const handleMouseMove = (e: MouseEvent) => {
-        if (isDragging) {
-            setPosition({
-                x: e.clientX - dragStart.x,
-                y: e.clientY - dragStart.y
-            });
-        }
-    };
-
-    const handleMouseUp = () => {
-        setIsDragging(false);
-    };
-
-    useEffect(() => {
-        if (isDragging) {
-            window.addEventListener('mousemove', handleMouseMove);
-            window.addEventListener('mouseup', handleMouseUp);
-        } else {
-            window.removeEventListener('mousemove', handleMouseMove);
-            window.removeEventListener('mouseup', handleMouseUp);
-        }
-        return () => {
-            window.removeEventListener('mousemove', handleMouseMove);
-            window.removeEventListener('mouseup', handleMouseUp);
-        };
-    }, [isDragging, dragStart]);
-    
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent
-                ref={dialogRef}
-                className="w-full max-w-2xl transform-none top-auto left-auto"
-                style={{
-                    position: 'fixed',
-                    top: `${position.y}px`,
-                    left: `${position.x}px`,
-                    cursor: isDragging ? 'grabbing' : 'grab',
-                }}
-                onPointerDown={(e) => e.stopPropagation()} // prevent Dialog default behavior
-                onInteractOutside={(e) => e.preventDefault()} // prevent closing on outside click
+                className="w-full max-w-2xl"
+                onInteractOutside={(e) => e.preventDefault()}
             >
-                <DialogHeader 
-                    onMouseDown={handleMouseDown}
-                    className="cursor-grab"
-                >
+                <DialogHeader>
                     <DialogTitle>AI Solver: Question {questionNumber}</DialogTitle>
                     <DialogDescription>{question.question}</DialogDescription>
                 </DialogHeader>
 
-                <div className="prose prose-sm max-w-none dark:prose-invert">
+                <div className="prose prose-sm max-w-none dark:prose-invert py-4">
                     {state?.isLoading && (
                         <div className="space-y-4">
                             <Skeleton className="h-4 w-1/3" />
@@ -119,7 +54,7 @@ export function QuestionSolverDialog({ question, questionNumber, state, open, on
                                 <h4 className="font-bold">Explanation</h4>
                                 <div
                                     className="whitespace-pre-wrap"
-                                    dangerouslySetInnerHTML={{ __html: state.solution.explanation.replace(/\n/g, '<br />') }}
+                                    dangerouslySetInnerHTML={{ __html: state.solution.explanation.replace(/\n/g, '<br />').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }}
                                 />
                             </div>
 
