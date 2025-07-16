@@ -2,7 +2,8 @@
 
 import { useState, useMemo } from "react";
 import Image from "next/image";
-import type { GenerateExamQuestionsOutput } from "@/ai/flows/generate-exam-questions";
+import type { GenerateExamQuestionsOutput, GeneratedQuestion } from "@/ai/flows/generate-exam-questions";
+import type { SolvingState } from "@/app/page";
 import React from 'react';
 
 import { Badge } from "@/components/ui/badge";
@@ -10,9 +11,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { Sparkles, CheckCircle, XCircle } from "lucide-react";
+import { Sparkles, CheckCircle, XCircle, BrainCircuit, Loader2 } from "lucide-react";
 
-type QuestionWithAnswer = GenerateExamQuestionsOutput['questions'][0] & {
+type QuestionWithAnswer = GeneratedQuestion & {
     userAnswer?: string;
     isCorrect?: boolean;
 };
@@ -21,6 +22,8 @@ type QuestionDisplayProps = {
     examData: GenerateExamQuestionsOutput;
     subject: string;
     year: string;
+    onSolve: (question: GeneratedQuestion, index: number) => void;
+    solvingState: SolvingState;
 }
 
 function HighlightedQuestion({ text }: { text: string }) {
@@ -41,7 +44,7 @@ function HighlightedQuestion({ text }: { text: string }) {
     );
 }
 
-export default function QuestionDisplay({ examData, subject, year }: QuestionDisplayProps) {
+export default function QuestionDisplay({ examData, subject, year, onSolve, solvingState }: QuestionDisplayProps) {
     const [questions, setQuestions] = useState<QuestionWithAnswer[]>(examData.questions);
     const [showResults, setShowResults] = useState(false);
 
@@ -86,12 +89,14 @@ export default function QuestionDisplay({ examData, subject, year }: QuestionDis
                         <CardHeader>
                             <div className="flex justify-between items-start">
                                 <p className="font-semibold">Question {index + 1}</p>
+                                <div className="flex items-center gap-2">
                                 {q.isAiGenerated && (
                                     <Badge variant="outline" className="w-fit bg-primary/10 border-primary/50 text-primary font-medium">
                                         <Sparkles className="mr-1.5 h-3 w-3" />
                                         AI Assisted
                                     </Badge>
                                 )}
+                                </div>
                             </div>
                         </CardHeader>
                         <CardContent className="space-y-4">
@@ -121,11 +126,24 @@ export default function QuestionDisplay({ examData, subject, year }: QuestionDis
                                 })}
                             </RadioGroup>
                         </CardContent>
-                        {showResults && !q.isCorrect && (
-                            <CardFooter>
+                        <CardFooter className="flex-col items-start gap-4">
+                             {showResults && !q.isCorrect && (
                                 <p className="text-sm text-green-700 dark:text-green-400 font-medium">Correct answer: {q.correctAnswer}</p>
-                            </CardFooter>
-                        )}
+                            )}
+                             <Button 
+                                variant="outline" 
+                                size="sm" 
+                                onClick={() => onSolve(q, index)} 
+                                disabled={solvingState[index]?.isLoading}
+                            >
+                                {solvingState[index]?.isLoading ? (
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                ) : (
+                                    <BrainCircuit className="mr-2 h-4 w-4" />
+                                )}
+                                AI Solve
+                            </Button>
+                        </CardFooter>
                     </Card>
                 ))}
             </div>

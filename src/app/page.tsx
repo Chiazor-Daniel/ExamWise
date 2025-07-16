@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { getAvailableSubjects, handleGenerateQuestions } from "@/app/actions";
-import type { GenerateExamQuestionsOutput } from "@/ai/flows/generate-exam-questions";
+import { getAvailableSubjects, handleGenerateQuestions, handleSolveQuestion } from "@/app/actions";
+import type { GenerateExamQuestionsOutput, GeneratedQuestion } from "@/ai/flows/generate-exam-questions";
+import type { SolveQuestionOutput } from "@/ai/flows/solve-question";
 import AppLayout from '@/components/app-layout';
 import QuestionDisplay from "@/components/question-display";
+import { QuestionSolverDialog } from "@/components/question-solver-dialog";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,8 +14,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, BookCopy, Sparkles } from "lucide-react";
+import { Loader2, BookCopy } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+
+export type SolvingState = {
+    [questionIndex: number]: {
+        isLoading: boolean;
+        solution: SolveQuestionOutput | null;
+        error?: string;
+    }
+}
 
 export default function Home() {
     const [isGenerating, setIsGenerating] = useState(false);
@@ -22,6 +32,8 @@ export default function Home() {
     const [targetYear, setTargetYear] = useState<string>(String(new Date().getFullYear() + 1));
     const [generatedExam, setGeneratedExam] = useState<GenerateExamQuestionsOutput | null>(null);
     const [isLoadingSubjects, setIsLoadingSubjects] = useState(true);
+    const [solvingState, setSolvingState] = useState<SolvingState>({});
+    const [openDialogs, setOpenDialogs] = useState<{[key: number]: boolean}>({});
 
     const { toast } = useToast();
 
@@ -31,6 +43,9 @@ export default function Home() {
             const result = await getAvailableSubjects();
             if (result.success && result.data) {
                 setSubjects(result.data);
+                if (result.data.length > 0 && !selectedSubject) {
+                    setSelectedSubject(result.data[0]);
+                }
             } else {
                 toast({
                     variant: "destructive",
@@ -56,6 +71,8 @@ export default function Home() {
 
         setIsGenerating(true);
         setGeneratedExam(null);
+        setSolvingState({});
+        setOpenDialogs({});
 
         const result = await handleGenerateQuestions({
             subject: selectedSubject,
@@ -76,6 +93,32 @@ export default function Home() {
                 description: result.error,
             });
         }
+    };
+
+    const onSolve = async (question: GeneratedQuestion, index: number) => {
+        setSolvingState(prev => ({ ...prev, [index]: { isLoading: true, solution: null } }));
+        setOpenDialogs(prev => ({...prev, [index]: true}));
+
+        const result = await handleSolveQuestion({
+            question: question.question,
+            options: question.options,
+            correctAnswer: question.correctAnswer
+        });
+
+        if (result.success && result.data) {
+            setSolvingState(prev => ({...prev, [index]: { isLoading: false, solution: result.data }}));
+        } else {
+            setSolvingState(prev => ({...prev, [index]: { isLoading: false, solution: null, error: result.error }}));
+             toast({
+                variant: "destructive",
+                title: "AI Solver Failed",
+                description: result.error,
+            });
+        }
+    };
+
+    const handleDialogClose = (index: number) => {
+        setOpenDialogs(prev => ({...prev, [index]: false}));
     };
 
     return (
@@ -163,8 +206,22 @@ export default function Home() {
                         examData={generatedExam} 
                         subject={selectedSubject} 
                         year={targetYear} 
+                        onSolve={onSolve}
+                        solvingState={solvingState}
                     />
                 )}
+
+                {generatedExam?.questions.map((q, index) => (
+                     <QuestionSolverDialog
+                        key={index}
+                        question={q}
+                        questionNumber={index + 1}
+                        state={solvingState[index]}
+                        open={openDialogs[index] || false}
+                        onOpenChange={() => handleDialogClose(index)}
+                    />
+                ))}
+
             </div>
         </AppLayout>
     );
