@@ -4,30 +4,14 @@
  * @fileOverview A flow for solving an exam question and providing a text and audio explanation.
  *
  * - solveQuestion - A function that provides a detailed solution to a question.
- * - SolveQuestionInput - The input type for the solveQuestion function.
- * - SolveQuestionOutput - The return type for the solveQuestion function.
  */
 
 import {ai} from '@/ai/genkit';
 import {googleAI} from '@genkit-ai/googleai';
-import {z} from 'genkit/zod';
+import {z} from 'genkit';
 import wav from 'wav';
+import { SolveQuestionInputSchema, type SolveQuestionInput, SolveQuestionOutputSchema, type SolveQuestionOutput } from '@/types/exam-types';
 
-// Define input schema
-export const SolveQuestionInputSchema = z.object({
-  question: z.string().describe('The exam question to be solved.'),
-  options: z.array(z.string()).describe('The multiple-choice options for the question.'),
-  correctAnswer: z.string().describe('The correct answer to the question.'),
-});
-export type SolveQuestionInput = z.infer<typeof SolveQuestionInputSchema>;
-
-// Define output schema
-export const SolveQuestionOutputSchema = z.object({
-  explanation: z.string().describe('A detailed, step-by-step explanation of how to arrive at the correct answer. Use Markdown for formatting, like bolding key terms.'),
-  correctAnswer: z.string().describe('The correct answer option.'),
-  audioDataUri: z.string().describe("A data URI of the explanation audio. Format: 'data:audio/wav;base64,<encoded_data>'"),
-});
-export type SolveQuestionOutput = z.infer<typeof SolveQuestionOutputSchema>;
 
 // Define the main exported function
 export async function solveQuestion(input: SolveQuestionInput): Promise<SolveQuestionOutput> {

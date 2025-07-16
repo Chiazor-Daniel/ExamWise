@@ -3,8 +3,9 @@
 
 import { analyzeExamPatterns, type AnalyzeExamPatternsInput, type AnalyzeExamPatternsOutput } from "@/ai/flows/analyze-exam-patterns";
 import { generateExamQuestions, type GenerateExamQuestionsInput } from "@/ai/flows/generate-exam-questions";
-import { solveQuestion, type SolveQuestionInput, type SolveQuestionOutput } from "@/ai/flows/solve-question";
+import { solveQuestion } from "@/ai/flows/solve-question";
 import { getAnalysisForSubject as getAnalysis, saveAnalysis, getAvailableSubjects as getSubjects } from "@/lib/analysis-store";
+import type { SolveQuestionInput, SolveQuestionOutput } from "@/types/exam-types";
 
 export type GetAnalysisForSubjectOutput = AnalyzeExamPatternsOutput;
 

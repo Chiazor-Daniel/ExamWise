@@ -2,8 +2,8 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { getAvailableSubjects, handleGenerateQuestions, handleSolveQuestion } from "@/app/actions";
-import type { GenerateExamQuestionsOutput, GeneratedQuestion } from "@/ai/flows/generate-exam-questions";
-import type { SolveQuestionOutput } from "@/ai/flows/solve-question";
+import type { GenerateExamQuestionsOutput, GeneratedQuestion } from "@/types/exam-types";
+import type { SolveQuestionOutput } from "@/types/exam-types";
 import AppLayout from '@/components/app-layout';
 import QuestionDisplay from "@/components/question-display";
 import { QuestionSolverDialog } from "@/components/question-solver-dialog";

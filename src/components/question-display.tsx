@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Image from "next/image";
-import type { GenerateExamQuestionsOutput, GeneratedQuestion } from "@/ai/flows/generate-exam-questions";
+import type { GenerateExamQuestionsOutput, GeneratedQuestion } from "@/types/exam-types";
 import type { SolvingState } from "@/app/page";
 import React from 'react';
 

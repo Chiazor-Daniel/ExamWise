@@ -2,8 +2,8 @@
 "use client";
 
 import React, { useRef, useState, useEffect } from 'react';
-import type { GeneratedQuestion } from "@/ai/flows/generate-exam-questions";
-import type { SolveQuestionOutput } from '@/ai/flows/solve-question';
+import type { GeneratedQuestion } from "@/types/exam-types";
+import type { SolveQuestionOutput } from '@/types/exam-types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Skeleton } from './ui/skeleton';
 import { Badge } from './ui/badge';
@@ -145,4 +145,3 @@ export function QuestionSolverDialog({ question, questionNumber, state, open, on
         </Dialog>
     );
 }
-
