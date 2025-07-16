@@ -11,9 +11,19 @@ export type SolveQuestionInput = z.infer<typeof SolveQuestionInputSchema>;
 export const SolveQuestionOutputSchema = z.object({
   explanation: z.string().describe('A detailed, step-by-step explanation of how to arrive at the correct answer. Use Markdown for formatting, like bolding key terms.'),
   correctAnswer: z.string().describe('The correct answer option.'),
-  audioDataUri: z.string().describe("A data URI of the explanation audio. Format: 'data:audio/wav;base64,<encoded_data>'"),
 });
 export type SolveQuestionOutput = z.infer<typeof SolveQuestionOutputSchema>;
+
+// Types for generate-audio-explanation flow
+export const GenerateAudioInputSchema = z.object({
+  explanation: z.string().describe('The text to be converted to audio.'),
+});
+export type GenerateAudioInput = z.infer<typeof GenerateAudioInputSchema>;
+
+export const GenerateAudioOutputSchema = z.object({
+  audioDataUri: z.string().describe("A data URI of the explanation audio. Format: 'data:audio/wav;base64,<encoded_data>'"),
+});
+export type GenerateAudioOutput = z.infer<typeof GenerateAudioOutputSchema>;
 
 
 // Types for generate-exam-questions flow

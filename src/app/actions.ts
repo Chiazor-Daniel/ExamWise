@@ -2,10 +2,11 @@
 "use server";
 
 import { analyzeExamPatterns, type AnalyzeExamPatternsInput, type AnalyzeExamPatternsOutput } from "@/ai/flows/analyze-exam-patterns";
+import { generateAudioExplanation } from "@/ai/flows/generate-audio-explanation";
 import { generateExamQuestions, type GenerateExamQuestionsInput } from "@/ai/flows/generate-exam-questions";
 import { solveQuestion } from "@/ai/flows/solve-question";
 import { getAnalysisForSubject as getAnalysis, saveAnalysis, getAvailableSubjects as getSubjects } from "@/lib/analysis-store";
-import type { SolveQuestionInput, SolveQuestionOutput } from "@/types/exam-types";
+import type { GenerateAudioInput, GenerateAudioOutput, SolveQuestionInput, SolveQuestionOutput } from "@/types/exam-types";
 
 export type GetAnalysisForSubjectOutput = AnalyzeExamPatternsOutput;
 
@@ -53,6 +54,18 @@ export async function handleSolveQuestion(input: SolveQuestionInput): Promise<{s
         return { success: false, error: `Failed to get solution. ${errorMessage}` };
     }
 }
+
+export async function handleGenerateAudio(input: GenerateAudioInput): Promise<{success: true, data: GenerateAudioOutput} | {success: false, error: string}> {
+    try {
+        const result = await generateAudioExplanation(input);
+        return { success: true, data: result };
+    } catch (error) {
+        console.error("Error generating audio:", error);
+        const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+        return { success: false, error: `Failed to generate audio. ${errorMessage}` };
+    }
+}
+
 
 export async function getAvailableSubjects() {
     try {
