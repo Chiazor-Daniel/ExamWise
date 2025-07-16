@@ -7,7 +7,6 @@
 
 import { ai } from '@/ai/genkit';
 import { googleAI } from '@genkit-ai/googleai';
-import { z } from 'genkit';
 import wav from 'wav';
 import { GenerateAudioInputSchema, GenerateAudioOutputSchema, type GenerateAudioInput } from '@/types/exam-types';
 
@@ -61,11 +60,12 @@ const generateAudioExplanationFlow = ai.defineFlow(
                 },
                 },
             },
-            prompt: explanation.replace(/\*\*/g, ''), // Remove markdown for cleaner speech
+            // Remove markdown for cleaner speech, as it can cause errors.
+            prompt: explanation.replace(/\*\*/g, ''), 
         });
 
         if (!media?.url) {
-            throw new Error('Failed to generate audio explanation.');
+            throw new Error('Failed to generate audio explanation. The AI model did not return any media.');
         }
 
         const audioBuffer = Buffer.from(

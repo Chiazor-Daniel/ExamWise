@@ -33,18 +33,27 @@ export function QuestionSolverDialog({ question, questionNumber, state, open, on
         setIsAudioLoading(true);
         setAudioDataUri(null);
 
-        const result = await handleGenerateAudio({ explanation: state.solution.explanation });
-        
-        if (result.success && result.data) {
-            setAudioDataUri(result.data.audioDataUri);
-        } else {
-            toast({
+        try {
+            const result = await handleGenerateAudio({ explanation: state.solution.explanation });
+            
+            if (result.success && result.data) {
+                setAudioDataUri(result.data.audioDataUri);
+            } else {
+                toast({
+                    variant: 'destructive',
+                    title: 'Audio Generation Failed',
+                    description: result.error,
+                });
+            }
+        } catch (e) {
+             toast({
                 variant: 'destructive',
-                title: 'Audio Generation Failed',
-                description: result.error,
+                title: 'An Unexpected Error Occurred',
+                description: 'Failed to generate audio explanation.',
             });
+        } finally {
+            setIsAudioLoading(false);
         }
-        setIsAudioLoading(false);
     }
 
     return (
