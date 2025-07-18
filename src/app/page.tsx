@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
@@ -14,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, BookCopy } from "lucide-react";
+import { Loader2, BookCopy, Trash2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export type SolvingState = {
@@ -24,6 +25,8 @@ export type SolvingState = {
         error?: string;
     }
 }
+
+const CACHE_PREFIX = "examwise-cache-";
 
 export default function Home() {
     const [isGenerating, setIsGenerating] = useState(false);
@@ -74,6 +77,20 @@ export default function Home() {
         setSolvingState({});
         setOpenDialogs({});
 
+        // Check cache first
+        const cacheKey = `${CACHE_PREFIX}${selectedSubject}-${year}`;
+        const cachedExam = localStorage.getItem(cacheKey);
+        if (cachedExam) {
+            setGeneratedExam(JSON.parse(cachedExam));
+            toast({
+                title: "Exam Loaded from Cache!",
+                description: `Loaded mock exam for ${selectedSubject} ${year} from your browser.`,
+            });
+            setIsGenerating(false);
+            return;
+        }
+
+
         const result = await handleGenerateQuestions({
             subject: selectedSubject,
             year: year,
@@ -82,6 +99,7 @@ export default function Home() {
 
         if (result.success && result.data) {
             setGeneratedExam(result.data);
+            localStorage.setItem(cacheKey, JSON.stringify(result.data));
             toast({
                 title: "Exam Generated!",
                 description: `A mock exam for ${selectedSubject} ${year} has been created.`,
@@ -94,6 +112,18 @@ export default function Home() {
             });
         }
     };
+    
+    const clearCache = () => {
+        Object.keys(localStorage).forEach(key => {
+            if (key.startsWith(CACHE_PREFIX)) {
+                localStorage.removeItem(key);
+            }
+        });
+        toast({
+            title: "Cache Cleared",
+            description: "All cached exams have been removed from your browser."
+        })
+    }
 
     const onSolve = async (question: GeneratedQuestion, index: number) => {
         setSolvingState(prev => ({ ...prev, [index]: { isLoading: true, solution: null } }));
@@ -175,16 +205,21 @@ export default function Home() {
                                 />
                             </div>
                         </div>
-                        <Button onClick={handleGenerate} disabled={isGenerating || isLoadingSubjects || subjects.length === 0} className="bg-accent hover:bg-accent/90 text-accent-foreground w-full sm:w-auto">
-                            {isGenerating ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Generating Exam...
-                                </>
-                            ) : (
-                                "Generate Exam"
-                            )}
-                        </Button>
+                        <div className="flex flex-wrap gap-2 items-center">
+                            <Button onClick={handleGenerate} disabled={isGenerating || isLoadingSubjects || subjects.length === 0} className="bg-accent hover:bg-accent/90 text-accent-foreground w-full sm:w-auto">
+                                {isGenerating ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Generating Exam...
+                                    </>
+                                ) : (
+                                    "Generate Exam"
+                                )}
+                            </Button>
+                             <Button onClick={clearCache} variant="outline" size="icon" aria-label="Clear cached exams">
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                        </div>
                     </CardContent>
                 </Card>
 
