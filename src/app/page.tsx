@@ -59,7 +59,7 @@ export default function Home() {
             setIsLoadingSubjects(false);
         }
         fetchSubjects();
-    }, [toast]);
+    }, [toast, selectedSubject]);
 
     const handleGenerate = async () => {
         const year = parseInt(targetYear, 10);
@@ -81,12 +81,14 @@ export default function Home() {
         const cacheKey = `${CACHE_PREFIX}${selectedSubject}-${year}`;
         const cachedExam = localStorage.getItem(cacheKey);
         if (cachedExam) {
-            setGeneratedExam(JSON.parse(cachedExam));
-            toast({
-                title: "Exam Loaded from Cache!",
-                description: `Loaded mock exam for ${selectedSubject} ${year} from your browser.`,
-            });
-            setIsGenerating(false);
+            setTimeout(() => {
+                setGeneratedExam(JSON.parse(cachedExam));
+                toast({
+                    title: "Exam Loaded from Cache!",
+                    description: `Loaded mock exam for ${selectedSubject} ${year} from your browser.`,
+                });
+                setIsGenerating(false);
+            }, 2000);
             return;
         }
 
@@ -236,7 +238,7 @@ export default function Home() {
                     </div>
                 )}
                 
-                {generatedExam && (
+                {generatedExam && !isGenerating && (
                     <QuestionDisplay 
                         examData={generatedExam} 
                         subject={selectedSubject} 
