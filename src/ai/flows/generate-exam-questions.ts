@@ -31,11 +31,12 @@ const generateExamQuestionsPrompt = ai.definePrompt({
 
 Subject: {{{subject}}}
 Target Year: {{{year}}}
+Difficulty Level: {{{difficulty}}}
 Past Paper Analysis Summary:
 {{{patternSummary}}}
 
 Instructions:
-1.  Generate exactly 40 unique multiple-choice exam questions that mimic the structure, style, and difficulty typically found in the past papers.
+1.  Generate exactly 40 unique multiple-choice exam questions that mimic the structure, style, and difficulty typically found in the past papers. The difficulty of the questions must match the requested level: {{{difficulty}}}.
 2.  For each question, provide exactly 4 multiple-choice options and indicate the correct answer. The options must be distinct and plausible.
 3.  If a question requires a diagram or image, create a concise description for an AI image generator in the 'imageDescription' field. For example: "A diagram of the human heart with labels for the four chambers". Also, include a placeholder in the question text, like "[Image of the human heart]".
 4.  For each question, indicate if it's purely AI-generated or based on a past paper style.

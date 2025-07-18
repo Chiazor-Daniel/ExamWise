@@ -65,6 +65,7 @@ export const GenerateExamQuestionsInputSchema = z.object({
       'A summary of identified patterns and recurring topics in past papers.'
     ),
   year: z.number().int().describe('The target year for the mock exam.'),
+  difficulty: z.string().describe('The difficulty level for the questions (e.g., Easy, Medium, Hard).'),
 });
 export type GenerateExamQuestionsInput = z.infer<
   typeof GenerateExamQuestionsInputSchema

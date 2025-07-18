@@ -33,6 +33,7 @@ export default function Home() {
     const [subjects, setSubjects] = useState<string[]>([]);
     const [selectedSubject, setSelectedSubject] = useState<string>("");
     const [targetYear, setTargetYear] = useState<string>(String(new Date().getFullYear() + 1));
+    const [difficulty, setDifficulty] = useState<string>("Medium");
     const [generatedExam, setGeneratedExam] = useState<GenerateExamQuestionsOutput | null>(null);
     const [isLoadingSubjects, setIsLoadingSubjects] = useState(true);
     const [solvingState, setSolvingState] = useState<SolvingState>({});
@@ -78,7 +79,7 @@ export default function Home() {
         setOpenDialogs({});
 
         // Check cache first
-        const cacheKey = `${CACHE_PREFIX}${selectedSubject}-${year}`;
+        const cacheKey = `${CACHE_PREFIX}${selectedSubject}-${year}-${difficulty}`;
         const cachedExam = localStorage.getItem(cacheKey);
         if (cachedExam) {
             setTimeout(() => {
@@ -96,6 +97,7 @@ export default function Home() {
         const result = await handleGenerateQuestions({
             subject: selectedSubject,
             year: year,
+            difficulty: difficulty,
         });
         setIsGenerating(false);
 
@@ -123,13 +125,23 @@ export default function Home() {
         });
         toast({
             title: "Cache Cleared",
-            description: "All cached exams have been removed from your browser."
+            description: "All cached exams and solutions have been removed from your browser."
         })
     }
 
     const onSolve = async (question: GeneratedQuestion, index: number) => {
         setSolvingState(prev => ({ ...prev, [index]: { isLoading: true, solution: null } }));
         setOpenDialogs(prev => ({...prev, [index]: true}));
+
+        const cacheKey = `${CACHE_PREFIX}solution-${question.question}`;
+        const cachedSolution = localStorage.getItem(cacheKey);
+
+        if (cachedSolution) {
+             setTimeout(() => {
+                 setSolvingState(prev => ({...prev, [index]: { isLoading: false, solution: JSON.parse(cachedSolution) }}));
+             }, 1000);
+            return;
+        }
 
         const result = await handleSolveQuestion({
             question: question.question,
@@ -139,6 +151,7 @@ export default function Home() {
 
         if (result.success && result.data) {
             setSolvingState(prev => ({...prev, [index]: { isLoading: false, solution: result.data }}));
+            localStorage.setItem(cacheKey, JSON.stringify(result.data));
         } else {
             setSolvingState(prev => ({...prev, [index]: { isLoading: false, solution: null, error: result.error }}));
              toast({
@@ -176,7 +189,7 @@ export default function Home() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
                             <div className="space-y-2">
                                 <Label>Subject</Label>
                                 {isLoadingSubjects ? (
@@ -205,6 +218,19 @@ export default function Home() {
                                     onChange={(e) => setTargetYear(e.target.value)}
                                     placeholder="e.g., 2025"
                                 />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Difficulty</Label>
+                                <Select onValueChange={setDifficulty} value={difficulty}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select difficulty" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Easy">Easy</SelectItem>
+                                        <SelectItem value="Medium">Medium</SelectItem>
+                                        <SelectItem value="Hard">Hard</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
                         </div>
                         <div className="flex flex-wrap gap-2 items-center">
