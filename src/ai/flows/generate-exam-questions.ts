@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -27,7 +28,7 @@ const generateExamQuestionsPrompt = ai.definePrompt({
   output: {
     schema: GenerateExamQuestionsOutputSchema,
   },
-  prompt: `You are an expert exam question generator. Your task is to create a full mock exam paper for a future year based on an analysis of past papers.
+  prompt: `You are an expert examiner on a national examination board. Your task is to create a challenging, high-quality mock exam paper for a future year based on an analysis of past papers.
 
 Subject: {{{subject}}}
 Target Year: {{{year}}}
@@ -36,12 +37,17 @@ Past Paper Analysis Summary:
 {{{patternSummary}}}
 
 Instructions:
-1.  Generate exactly 40 unique multiple-choice exam questions that mimic the structure, style, and difficulty typically found in the past papers. The difficulty of the questions must match the requested level: {{{difficulty}}}.
-2.  For each question, provide exactly 4 multiple-choice options and indicate the correct answer. The options must be distinct and plausible.
-3.  If a question requires a diagram or image, create a concise description for an AI image generator in the 'imageDescription' field. For example: "A diagram of the human heart with labels for the four chambers". Also, include a placeholder in the question text, like "[Image of the human heart]".
-4.  For each question, indicate if it's purely AI-generated or based on a past paper style.
-5.  Provide a 'highlightedQuestion' version where AI-generated parts are in bold markdown.
-6.  Crucially, the 'question' and 'highlightedQuestion' fields must NOT contain the multiple-choice options. The options should only be in the 'options' array.
+1.  Generate exactly 40 unique multiple-choice exam questions that mimic the structure, style, and rigor of official examinations.
+2.  The difficulty of the questions must strictly match the requested level: '{{{difficulty}}}'.
+    - For 'Easy' difficulty, focus on foundational concepts and direct recall.
+    - For 'Medium' difficulty, include a mix of conceptual questions and multi-step calculation problems.
+    - For 'Hard' difficulty, create complex problems that require deep conceptual understanding and sophisticated calculations.
+3.  **Crucially, for science subjects like Physics and Chemistry, ensure a significant number of questions are calculation-based, especially for Medium and Hard levels.** These should be challenging, multi-step problems.
+4.  For each question, provide exactly 4 multiple-choice options. The incorrect options (distractors) must be plausible and based on common student errors. Indicate the single correct answer.
+5.  If a question requires a diagram or image (e.g., circuits, organic compounds, diagrams), create a concise, clear description for an AI image generator in the 'imageDescription' field. For example: "A diagram of the human heart with labels for the four chambers". Also, include a placeholder in the question text, like "[Image of the human heart]".
+6.  For each question, indicate if it's purely AI-generated or based on a past paper style.
+7.  Provide a 'highlightedQuestion' version where AI-generated parts are in bold markdown.
+8.  **The 'question' and 'highlightedQuestion' fields must NOT contain the multiple-choice options.** The options must only be in the 'options' array.
 
 Output exactly 40 questions in the specified JSON format.`,
 });
