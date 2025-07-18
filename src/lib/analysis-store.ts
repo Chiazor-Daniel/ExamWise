@@ -1,54 +1,27 @@
-import { promises as fs } from 'fs';
-import path from 'path';
 import type { AnalyzeExamPatternsOutput } from '@/ai/flows/analyze-exam-patterns';
+import analysisCache from '@/data/analysis-cache.json';
 
-const cacheFilePath = path.resolve(process.cwd(), 'src/data/analysis-cache.json');
+// The cache is now a typed version of the imported JSON file.
+const typedCache: Record<string, AnalyzeExamPatternsOutput> = analysisCache;
 
-type AnalysisCache = {
-    [subject: string]: AnalyzeExamPatternsOutput;
-};
-
-async function readCache(): Promise<AnalysisCache> {
-    try {
-        await fs.access(cacheFilePath);
-    } catch {
-        // File doesn't exist, create it with an empty object
-        await fs.writeFile(cacheFilePath, JSON.stringify({}), 'utf8');
-        return {};
-    }
-
-    try {
-        const data = await fs.readFile(cacheFilePath, 'utf8');
-        if (!data) return {};
-        return JSON.parse(data) as AnalysisCache;
-    } catch (error) {
-        console.error('Error reading or parsing analysis cache:', error);
-        // If parsing fails, return an empty object to prevent app crash
-        return {};
-    }
-}
-
-async function writeCache(data: AnalysisCache): Promise<void> {
-    try {
-        await fs.writeFile(cacheFilePath, JSON.stringify(data, null, 2), 'utf8');
-    } catch (error) {
-        console.error('Error writing to analysis cache:', error);
-        throw new Error('Could not save analysis data.');
-    }
-}
-
-export async function saveAnalysis(subject: string, analysis: AnalyzeExamPatternsOutput): Promise<void> {
-    const cache = await readCache();
-    cache[subject] = analysis;
-    await writeCache(cache);
-}
-
+/**
+ * Retrieves the analysis for a given subject directly from the imported JSON cache.
+ * This approach is compatible with serverless environments like Vercel.
+ * @param subject The subject to retrieve analysis for.
+ * @returns The analysis output or null if not found.
+ */
 export async function getAnalysisForSubject(subject: string): Promise<AnalyzeExamPatternsOutput | null> {
-    const cache = await readCache();
-    return cache[subject] || null;
+    return typedCache[subject] || null;
 }
 
+/**
+ * Retrieves a list of all available subjects from the JSON cache.
+ * @returns An array of subject names.
+ */
 export async function getAvailableSubjects(): Promise<string[]> {
-    const cache = await readCache();
-    return Object.keys(cache);
+    return Object.keys(typedCache);
 }
+
+// The saveAnalysis function has been removed as we can no longer write to the file system
+// on a serverless platform. To add or update a subject, you must now edit the
+// `src/data/analysis-cache.json` file directly.
