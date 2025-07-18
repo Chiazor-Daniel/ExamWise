@@ -5,15 +5,17 @@ import { analyzeExamPatterns, type AnalyzeExamPatternsInput, type AnalyzeExamPat
 import { generateAudioExplanation } from "@/ai/flows/generate-audio-explanation";
 import { generateExamQuestions, type GenerateExamQuestionsInput } from "@/ai/flows/generate-exam-questions";
 import { solveQuestion } from "@/ai/flows/solve-question";
-import { getAnalysisForSubject as getAnalysis, saveAnalysis, getAvailableSubjects as getSubjects } from "@/lib/analysis-store";
+import { getAnalysisForSubject as getAnalysis, getAvailableSubjects as getSubjects } from "@/lib/analysis-store";
 import type { GenerateAudioInput, GenerateAudioOutput, SolveQuestionInput, SolveQuestionOutput } from "@/types/exam-types";
 
 export type GetAnalysisForSubjectOutput = AnalyzeExamPatternsOutput;
 
 export async function handleAnalyzePatterns(input: AnalyzeExamPatternsInput) {
     try {
+        // NOTE: The result is no longer saved to a file to ensure Vercel/serverless compatibility.
+        // The analysis will only be available for the current session's generation requests.
+        // To add a new subject permanently, you would add it to the `analysis-cache.json` file.
         const result = await analyzeExamPatterns(input);
-        await saveAnalysis(input.subject, result);
         return { success: true, data: result };
     } catch (error) {
         console.error("Error analyzing patterns:", error);

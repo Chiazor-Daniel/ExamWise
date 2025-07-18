@@ -58,7 +58,7 @@ export default function PatternAnalyzer({ onAnalysisComplete }: PatternAnalyzerP
             });
 
             if (result.success && result.data) {
-                toast({ title: "Analysis Complete", description: `Subject '${values.subject}' analyzed and saved successfully.` });
+                toast({ title: "Analysis Complete", description: `Subject '${values.subject}' analyzed successfully. To persist this analysis, add the output to analysis-cache.json.` });
                 onAnalysisComplete(values.subject);
                 form.reset();
                 setUploadedFiles([]);
@@ -88,7 +88,7 @@ export default function PatternAnalyzer({ onAnalysisComplete }: PatternAnalyzerP
                     <span>Analyze a New Subject</span>
                 </CardTitle>
                 <CardDescription>
-                    Upload past exam papers (PDFs) for a subject. The AI will analyze them and save the results.
+                    Upload past exam papers (PDFs) for a subject. The AI will analyze them for the current session.
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -162,7 +162,7 @@ export default function PatternAnalyzer({ onAnalysisComplete }: PatternAnalyzerP
                                     Analyzing...
                                 </>
                             ) : (
-                                "Analyze & Save Subject"
+                                "Analyze Subject"
                             )}
                         </Button>
                     </form>
