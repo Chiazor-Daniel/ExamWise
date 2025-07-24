@@ -1,8 +1,10 @@
-# ExamWise
+# ExamWise - AI Exam Prep Tool
 
-This is an AI-powered exam preparation tool built with Next.js in Firebase Studio.
+This is an AI-powered exam preparation tool built with Next.js in Firebase Studio. It allows users to analyze past exam papers, identify key topics, and generate mock exams with AI assistance.
 
-## Running Locally
+This document provides instructions for running the existing web application locally and a guide for developers on how to adapt this project to create a mobile application using React Native.
+
+## Running the Web Application Locally
 
 To run this project on your local machine, follow these steps:
 
@@ -54,43 +56,87 @@ npm run genkit:watch
 
 With both servers running, you can now use the application locally.
 
-## How to Use in Another Web App
+---
 
-This project has been refactored into a self-contained component (`<ExamWiseClient />`) that can be integrated into another Next.js or React-based web application.
+## Guide: Creating a Mobile Version with React Native
 
-Because the component depends on server-side AI flows and specific UI configurations, you must copy the necessary files into your target project.
+It is not possible to use the web components from this project directly in React Native. The web app is built with Next.js and HTML-based components, while React Native uses its own set of native UI components.
 
-1.  **Copy Project Files**: Copy the following directories from this project into your target project's `src` folder:
-    *   `src/components`
-    *   `src/ai`
-    *   `src/lib`
-    *   `src/types`
-    *   `src/data`
+However, you **can** reuse the entire backend AI logic. The process involves two major parts: building a new React Native user interface and connecting it to the existing backend flows.
 
-2.  **Copy Server Actions**: Copy the `src/app/actions.ts` file into your project.
+### Part 1: Expose the Backend AI Flows as an API
 
-3.  **Merge `package.json`**: Add all the `dependencies` and `devDependencies` from this project's `package.json` file to your own and run `npm install`.
+The existing Next.js server actions are already callable from the web client. To use them from a React Native app, you need to expose them as standard HTTP API endpoints.
 
-4.  **Merge Configuration**:
-    *   Merge the settings from `tailwind.config.ts` into your project's Tailwind config.
-    *   Copy the styles from `src/app/globals.css` into your project's global CSS file.
-    *   Ensure your project has a `components.json` file for ShadCN UI, or copy this project's file.
+1.  **Understand the Server Actions:** The file `src/app/actions.ts` contains all the functions that interact with the Genkit AI flows (e.g., `handleAnalyzePatterns`, `handleGenerateQuestions`). These are the functions your mobile app will need to call.
 
-5.  **Set Environment Variables**: Add your `GOOGLE_API_KEY` to your project's `.env` file.
+2.  **Create API Routes:** In your Next.js app, create API routes that wrap these server actions. For example, you could create a file `src/app/api/generate-exam/route.ts`:
 
-6.  **Usage**: You can now import and use the main component in your application:
+    ```typescript
+    // src/app/api/generate-exam/route.ts
+    import { NextRequest, NextResponse } from 'next/server';
+    import { handleGenerateQuestions } from '@/app/actions';
 
-    ```jsx
-    import ExamWiseClient from './path/to/components/exam-generator'; // Adjust path as needed
+    export async function POST(request: NextRequest) {
+      try {
+        const body = await request.json(); // Contains subject, year, difficulty
+        const result = await handleGenerateQuestions(body);
 
-    function MyPage() {
-      return <ExamWiseClient />;
+        if (result.success) {
+          return NextResponse.json(result.data);
+        } else {
+          return NextResponse.json({ error: result.error }, { status: 500 });
+        }
+      } catch (error) {
+        return NextResponse.json({ error: 'An unexpected error occurred.' }, { status: 500 });
+      }
     }
     ```
 
-### Note on React Native
+3.  **Deploy the API**: Deploy this Next.js application to a hosting provider like Vercel or Firebase App Hosting. Once deployed, your API endpoints will be live and ready to be called from your mobile app (e.g., `https://your-app-url.com/api/generate-exam`).
 
-You **cannot** use this component directly in a React Native project. This application is built for the web (using HTML and CSS), while React Native uses different, platform-native UI components. To use this app's functionality in React Native, you would need to:
-1.  Rebuild the user interface using React Native components (e.g., `<View>`, `<Text>`).
-2.  Expose the backend Genkit flows as callable API endpoints that your React Native app can connect to.
-```
+### Part 2: Build the React Native User Interface
+
+With the backend API in place, you can now build the mobile app UI from scratch using React Native components.
+
+1.  **Set Up a React Native Project**: Start a new project using the React Native CLI or Expo.
+
+2.  **Recreate UI Components**: Rebuild the user interface components (`ExamGenerator`, `SubjectManager`, `QuestionDisplay`, etc.) using React Native's core components:
+    *   `<div>` becomes `<View>`
+    *   `<p>`, `<h1>` become `<Text>`
+    *   `<button>` becomes `<Button>` or `<TouchableOpacity>`
+    *   `<input>` becomes `<TextInput>`
+    *   File selection would require a library like `react-native-document-picker`.
+
+3.  **Connect UI to the API**: Use a library like `fetch` or `axios` in your React Native app to make network requests to the API endpoints you deployed.
+
+    **Example: Calling the Exam Generation API from React Native**
+
+    ```javascript
+    const generateExam = async (subject, year, difficulty) => {
+      try {
+        const response = await fetch('https://your-app-url.com/api/generate-exam', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ subject, year, difficulty }),
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          // Set the generated questions in your app's state
+          setGeneratedExam(data);
+        } else {
+          // Handle a server error
+          console.error(data.error);
+        }
+      } catch (error) {
+        // Handle a network error
+        console.error('Failed to connect to the server.');
+      }
+    };
+    ```
+
+By following this two-part approach, you can successfully build a native mobile app for iOS and Android that is powered by the same robust AI backend as your web application.
