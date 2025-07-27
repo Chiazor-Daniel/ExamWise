@@ -56,6 +56,45 @@ With both servers running, the API is ready to be called from your mobile app.
 
 ---
 
+## Testing with cURL
+
+Before building your mobile app, you can test the API endpoints using `cURL` from your terminal. Make sure both development servers are running. Once deployed, replace `http://localhost:9002` with your Vercel URL.
+
+**1. Get Available Subjects**
+```bash
+curl http://localhost:9002/api/subjects
+```
+
+**2. Get Analysis for a Subject**
+```bash
+# Replace "Physics" with the desired subject name
+curl http://localhost:9002/api/subjects/Physics
+```
+
+**3. Generate Exam Questions**
+```bash
+curl -X POST http://localhost:9002/api/generate-questions \
+-H "Content-Type: application/json" \
+-d '{
+  "subject": "Physics",
+  "year": 2025,
+  "difficulty": "Hard"
+}'
+```
+
+**4. Solve a Question**
+```bash
+curl -X POST http://localhost:9002/api/solve-question \
+-H "Content-Type: application/json" \
+-d '{
+  "question": "What is the formula for calculating kinetic energy?",
+  "options": ["m*g*h", "1/2 * m * v^2", "m*a", "p*V"],
+  "correctAnswer": "1/2 * m * v^2"
+}'
+```
+
+---
+
 ## Guide for Mobile App Development (React Native)
 
 You can build a native mobile app for iOS and Android that is powered by this backend. The mobile app will be responsible for the entire user interface, while this project provides the data and AI capabilities through a simple REST API.
