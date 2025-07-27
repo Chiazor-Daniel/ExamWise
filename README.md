@@ -1,12 +1,10 @@
 # ExamWise - AI Exam Prep Tool
 
-This is an AI-powered exam preparation tool built with Next.js in Firebase Studio. It allows users to analyze past exam papers, identify key topics, and generate mock exams with AI assistance.
+This project is a Next.js application that provides an AI-powered backend for exam preparation. It can analyze past exam papers, generate mock exams, and provide detailed solutions. This document serves as a guide for mobile developers who want to build a native mobile application (e.g., using React Native) that consumes the API provided by this backend.
 
-This document provides instructions for running the existing web application locally and a guide for developers on how to adapt this project to create a mobile application using React Native.
+## Running the Backend Locally
 
-## Running the Web Application Locally
-
-To run this project on your local machine, follow these steps:
+To run this backend on your local machine, you must have it deployed or follow these steps:
 
 ### 1. Prerequisites
 
@@ -34,17 +32,17 @@ GOOGLE_API_KEY=your_api_key_here
 
 ### 4. Run the Development Servers
 
-You need to run two separate development servers in two separate terminal windows for the application to work correctly.
+You need to run two separate development servers for the backend to work correctly.
 
-**Terminal 1: Run the Next.js App**
+**Terminal 1: Run the Next.js API Server**
 
-This command starts the user interface and web server.
+This command starts the web server that hosts the API endpoints.
 
 ```bash
 npm run dev
 ```
 
-The application will be available at `http://localhost:9002`.
+The API will be available at `http://localhost:9002`.
 
 **Terminal 2: Run the Genkit AI Flows**
 
@@ -54,89 +52,155 @@ This command starts the Genkit server, which handles all the AI-related tasks.
 npm run genkit:watch
 ```
 
-With both servers running, you can now use the application locally.
+With both servers running, the API is ready to be called from your mobile app.
 
 ---
 
-## Guide: Creating a Mobile Version with React Native
+## Guide for Mobile App Development (React Native)
 
-It is not possible to use the web components from this project directly in React Native. The web app is built with Next.js and HTML-based components, while React Native uses its own set of native UI components.
+You can build a native mobile app for iOS and Android that is powered by this backend. The mobile app will be responsible for the entire user interface, while this project provides the data and AI capabilities through a simple REST API.
 
-However, you **can** reuse the entire backend AI logic. The process involves two major parts: building a new React Native user interface and connecting it to the existing backend flows.
+### API Endpoints
 
-### Part 1: Expose the Backend AI Flows as an API
+Once deployed (e.g., to Vercel), your API will be available at a base URL like `https://your-examwise-app.vercel.app`.
 
-The existing Next.js server actions are already callable from the web client. To use them from a React Native app, you need to expose them as standard HTTP API endpoints.
+---
 
-1.  **Understand the Server Actions:** The file `src/app/actions.ts` contains all the functions that interact with the Genkit AI flows (e.g., `handleAnalyzePatterns`, `handleGenerateQuestions`). These are the functions your mobile app will need to call.
+#### 1. Get Available Subjects
 
-2.  **Create API Routes:** In your Next.js app, create API routes that wrap these server actions. For example, you could create a file `src/app/api/generate-exam/route.ts`:
-
-    ```typescript
-    // src/app/api/generate-exam/route.ts
-    import { NextRequest, NextResponse } from 'next/server';
-    import { handleGenerateQuestions } from '@/app/actions';
-
-    export async function POST(request: NextRequest) {
-      try {
-        const body = await request.json(); // Contains subject, year, difficulty
-        const result = await handleGenerateQuestions(body);
-
-        if (result.success) {
-          return NextResponse.json(result.data);
-        } else {
-          return NextResponse.json({ error: result.error }, { status: 500 });
-        }
-      } catch (error) {
-        return NextResponse.json({ error: 'An unexpected error occurred.' }, { status: 500 });
-      }
+- **Endpoint**: `GET /api/subjects`
+- **Description**: Fetches a list of all subjects that have pre-analyzed data available.
+- **Example Call (React Native)**:
+  ```javascript
+  const fetchSubjects = async () => {
+    try {
+      const response = await fetch('https://your-examwise-app.vercel.app/api/subjects');
+      const subjects = await response.json();
+      // Returns: ["Physics", "Biology", "Chemistry", ...]
+      setAvailableSubjects(subjects);
+    } catch (error) {
+      console.error('Failed to fetch subjects:', error);
     }
-    ```
+  };
+  ```
 
-3.  **Deploy the API**: Deploy this Next.js application to a hosting provider like Vercel or Firebase App Hosting. Once deployed, your API endpoints will be live and ready to be called from your mobile app (e.g., `https://your-app-url.com/api/generate-exam`).
+---
 
-### Part 2: Build the React Native User Interface
+#### 2. Get Analysis for a Subject
 
-With the backend API in place, you can now build the mobile app UI from scratch using React Native components.
+- **Endpoint**: `GET /api/subjects/{subjectName}`
+- **Description**: Retrieves the detailed analysis for a specific subject.
+- **Example Call (React Native)**:
+  ```javascript
+  const fetchAnalysis = async (subject) => {
+    try {
+      const response = await fetch(`https://your-examwise-app.vercel.app/api/subjects/${subject}`);
+      const analysis = await response.json();
+      // `analysis` will contain frequentTopics, questionPatterns, etc.
+      setAnalysisResult(analysis);
+    } catch (error) {
+      console.error('Failed to fetch analysis:', error);
+    }
+  };
+  ```
 
-1.  **Set Up a React Native Project**: Start a new project using the React Native CLI or Expo.
+---
 
-2.  **Recreate UI Components**: Rebuild the user interface components (`ExamGenerator`, `SubjectManager`, `QuestionDisplay`, etc.) using React Native's core components:
-    *   `<div>` becomes `<View>`
-    *   `<p>`, `<h1>` become `<Text>`
-    *   `<button>` becomes `<Button>` or `<TouchableOpacity>`
-    *   `<input>` becomes `<TextInput>`
-    *   File selection would require a library like `react-native-document-picker`.
+#### 3. Generate Exam Questions
 
-3.  **Connect UI to the API**: Use a library like `fetch` or `axios` in your React Native app to make network requests to the API endpoints you deployed.
+- **Endpoint**: `POST /api/generate-questions`
+- **Description**: Generates a new mock exam based on a subject, year, and difficulty.
+- **Request Body (JSON)**:
+  ```json
+  {
+    "subject": "Physics",
+    "year": 2025,
+    "difficulty": "Hard"
+  }
+  ```
+- **Example Call (React Native)**:
+  ```javascript
+  const generateExam = async (subject, year, difficulty) => {
+    try {
+      const response = await fetch('https://your-examwise-app.vercel.app/api/generate-questions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subject, year, difficulty }),
+      });
+      const examData = await response.json();
+      // `examData` will contain an array of questions
+      setGeneratedExam(examData.questions);
+    } catch (error) {
+      console.error('Failed to generate exam:', error);
+    }
+  };
+  ```
 
-    **Example: Calling the Exam Generation API from React Native**
+---
 
-    ```javascript
-    const generateExam = async (subject, year, difficulty) => {
-      try {
-        const response = await fetch('https://your-app-url.com/api/generate-exam', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ subject, year, difficulty }),
-        });
+#### 4. Solve a Question
 
-        const data = await response.json();
+- **Endpoint**: `POST /api/solve-question`
+- **Description**: Gets a detailed, AI-powered explanation for a specific question.
+- **Request Body (JSON)**:
+  ```json
+  {
+    "question": "What is the capital of France?",
+    "options": ["Berlin", "Madrid", "Paris", "Rome"],
+    "correctAnswer": "Paris"
+  }
+  ```
+- **Example Call (React Native)**:
+  ```javascript
+  const getSolution = async (question) => {
+    try {
+      const response = await fetch('https://your-examwise-app.vercel.app/api/solve-question', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          question: question.question,
+          options: question.options,
+          correctAnswer: question.correctAnswer
+        }),
+      });
+      const solution = await response.json();
+      // `solution` will contain the text explanation
+      setSolution(solution.explanation);
+    } catch (error) {
+      console.error('Failed to get solution:', error);
+    }
+  };
+  ```
 
-        if (response.ok) {
-          // Set the generated questions in your app's state
-          setGeneratedExam(data);
-        } else {
-          // Handle a server error
-          console.error(data.error);
-        }
-      } catch (error) {
-        // Handle a network error
-        console.error('Failed to connect to the server.');
-      }
-    };
-    ```
+---
 
-By following this two-part approach, you can successfully build a native mobile app for iOS and Android that is powered by the same robust AI backend as your web application.
+#### 5. Generate Audio Explanation
+
+- **Endpoint**: `POST /api/generate-audio`
+- **Description**: Converts an explanation text into speech.
+- **Request Body (JSON)**:
+  ```json
+  {
+    "explanation": "The correct answer is Paris because it is the capital city of France."
+  }
+  ```
+- **Example Call (React Native)**:
+  ```javascript
+  const getAudio = async (text) => {
+    try {
+      const response = await fetch('https://your-examwise-app.vercel.app/api/generate-audio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ explanation: text }),
+      });
+      const audioData = await response.json();
+      // `audioData.audioDataUri` is a base64 data URI you can use
+      // with a library like 'react-native-sound' or 'expo-av'.
+      playAudio(audioData.audioDataUri);
+    } catch (error) {
+      console.error('Failed to generate audio:', error);
+    }
+  };
+  ```
+
+By calling these endpoints, you can build a full-featured native mobile experience powered by this robust AI backend.
