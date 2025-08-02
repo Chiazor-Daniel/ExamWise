@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -61,7 +62,7 @@ const generateAudioExplanationFlow = ai.defineFlow(
                 },
             },
             // Remove markdown for cleaner speech, as it can cause errors.
-            prompt: explanation.replace(/\*\*/g, ''), 
+            prompt: explanation.replace(/\*\*/g, '').replace(/__/g, ''), 
         });
 
         if (!media?.url) {
