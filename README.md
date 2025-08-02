@@ -93,6 +93,15 @@ curl -X POST http://localhost:9002/api/solve-question \
 }'
 ```
 
+**5. Generate Audio Explanation**
+```bash
+curl -X POST http://localhost:9002/api/generate-audio \
+-H "Content-Type: application/json" \
+-d '{
+  "explanation": "The correct answer is Paris because it is the capital city of France."
+}'
+```
+
 ---
 
 ## Guide for Mobile App Development (React Native)

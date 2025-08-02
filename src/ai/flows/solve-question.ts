@@ -38,7 +38,7 @@ Instructions:
 3.  If the question involves calculations, show each step clearly.
 4.  If it's a conceptual question, explain the underlying principles.
 5.  Keep the tone helpful and educational.
-6.  Format your explanation using Markdown. Use bold for important keywords.
+6.  Format your explanation using Markdown for bolding important keywords (e.g., **keyword**).
 `
 });
 
