@@ -232,6 +232,8 @@ Once deployed, your API will be available at your Vercel URL: `https://class-fi.
     "explanation": "The correct answer is Paris because it is the capital city of France."
   }
   ```
+- **Response Note**: The API will return a JSON object with a single key, `audioDataUri`. The value of this key is a very long string, which is the entire audio file encoded in [base64 format](https://developer.mozilla.org/en-US/docs/Glossary/Base64). This is the expected behavior. Your mobile app can play this audio directly.
+
 - **Example Call (React Native)**:
   ```javascript
   const getAudio = async (text) => {
@@ -244,6 +246,11 @@ Once deployed, your API will be available at your Vercel URL: `https://class-fi.
       const audioData = await response.json();
       // `audioData.audioDataUri` is a base64 data URI you can use
       // with a library like 'react-native-sound' or 'expo-av'.
+      
+      // Example with expo-av:
+      // const { sound } = await Audio.Sound.createAsync({ uri: audioData.audioDataUri });
+      // await sound.playAsync();
+
       playAudio(audioData.audioDataUri);
     } catch (error) {
       console.error('Failed to generate audio:', error);
