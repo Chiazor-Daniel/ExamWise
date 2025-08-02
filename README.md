@@ -58,22 +58,22 @@ With both servers running, the API is ready to be called from your mobile app.
 
 ## Testing with cURL
 
-Before building your mobile app, you can test the API endpoints using `cURL` from your terminal. Make sure both development servers are running. Once deployed, replace `http://localhost:9002` with your Vercel URL.
+You can test the API endpoints using `cURL` from your terminal. Replace `https://class-fi.vercel.app` with your Vercel URL if it changes.
 
 **1. Get Available Subjects**
 ```bash
-curl http://localhost:9002/api/subjects
+curl https://class-fi.vercel.app/api/subjects
 ```
 
 **2. Get Analysis for a Subject**
 ```bash
 # Replace "Physics" with the desired subject name
-curl http://localhost:9002/api/subjects/Physics
+curl https://class-fi.vercel.app/api/subjects/Physics
 ```
 
 **3. Generate Exam Questions**
 ```bash
-curl -X POST http://localhost:9002/api/generate-questions \
+curl -X POST https://class-fi.vercel.app/api/generate-questions \
 -H "Content-Type: application/json" \
 -d '{
   "subject": "Physics",
@@ -84,7 +84,7 @@ curl -X POST http://localhost:9002/api/generate-questions \
 
 **4. Solve a Question**
 ```bash
-curl -X POST http://localhost:9002/api/solve-question \
+curl -X POST https://class-fi.vercel.app/api/solve-question \
 -H "Content-Type: application/json" \
 -d '{
   "question": "What is the formula for calculating kinetic energy?",
@@ -95,7 +95,7 @@ curl -X POST http://localhost:9002/api/solve-question \
 
 **5. Generate Audio Explanation**
 ```bash
-curl -X POST http://localhost:9002/api/generate-audio \
+curl -X POST https://class-fi.vercel.app/api/generate-audio \
 -H "Content-Type: application/json" \
 -d '{
   "explanation": "The correct answer is Paris because it is the capital city of France."
@@ -110,7 +110,7 @@ You can build a native mobile app for iOS and Android that is powered by this ba
 
 ### API Endpoints
 
-Once deployed (e.g., to Vercel), your API will be available at a base URL like `https://your-examwise-app.vercel.app`.
+Once deployed, your API will be available at your Vercel URL: `https://class-fi.vercel.app`.
 
 ---
 
@@ -122,7 +122,7 @@ Once deployed (e.g., to Vercel), your API will be available at a base URL like `
   ```javascript
   const fetchSubjects = async () => {
     try {
-      const response = await fetch('https://your-examwise-app.vercel.app/api/subjects');
+      const response = await fetch('https://class-fi.vercel.app/api/subjects');
       const subjects = await response.json();
       // Returns: ["Physics", "Biology", "Chemistry", ...]
       setAvailableSubjects(subjects);
@@ -142,7 +142,7 @@ Once deployed (e.g., to Vercel), your API will be available at a base URL like `
   ```javascript
   const fetchAnalysis = async (subject) => {
     try {
-      const response = await fetch(`https://your-examwise-app.vercel.app/api/subjects/${subject}`);
+      const response = await fetch(`https://class-fi.vercel.app/api/subjects/${subject}`);
       const analysis = await response.json();
       // `analysis` will contain frequentTopics, questionPatterns, etc.
       setAnalysisResult(analysis);
@@ -170,7 +170,7 @@ Once deployed (e.g., to Vercel), your API will be available at a base URL like `
   ```javascript
   const generateExam = async (subject, year, difficulty) => {
     try {
-      const response = await fetch('https://your-examwise-app.vercel.app/api/generate-questions', {
+      const response = await fetch('https://class-fi.vercel.app/api/generate-questions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ subject, year, difficulty }),
@@ -202,7 +202,7 @@ Once deployed (e.g., to Vercel), your API will be available at a base URL like `
   ```javascript
   const getSolution = async (question) => {
     try {
-      const response = await fetch('https://your-examwise-app.vercel.app/api/solve-question', {
+      const response = await fetch('https://class-fi.vercel.app/api/solve-question', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -236,7 +236,7 @@ Once deployed (e.g., to Vercel), your API will be available at a base URL like `
   ```javascript
   const getAudio = async (text) => {
     try {
-      const response = await fetch('https://your-examwise-app.vercel.app/api/generate-audio', {
+      const response = await fetch('https://class-fi.vercel.app/api/generate-audio', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ explanation: text }),
