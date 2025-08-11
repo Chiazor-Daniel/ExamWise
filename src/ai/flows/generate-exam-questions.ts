@@ -44,7 +44,7 @@ Instructions:
     - For 'Hard' difficulty, create complex problems that require deep conceptual understanding and sophisticated calculations.
 3.  **Crucially, for science subjects like Physics and Chemistry, ensure a significant number of questions are calculation-based, especially for Medium and Hard levels.** These should be challenging, multi-step problems.
 4.  For each question, provide exactly 4 multiple-choice options. The incorrect options (distractors) must be plausible and based on common student errors. Indicate the single correct answer.
-5.  If a question requires a diagram or image (e.g., circuits, organic compounds, diagrams), create a concise, clear description for an AI image generator in the 'imageDescription' field. For example: "A diagram of the human heart with labels for the four chambers". Also, include a placeholder in the question text, like "[Image of the human heart]".
+5.  If a question requires a diagram or image (e.g., circuits, organic compounds, diagrams), create a concise, clear description for an AI image generator in the 'imageDescription' field. For example: "A diagram of the human heart with labels for the four chambers". Also, include a placeholder in the question text, like "[Image of the human heart]". Do NOT generate the image itself.
 6.  For each question, indicate if it's purely AI-generated or based on a past paper style.
 7.  Provide a 'highlightedQuestion' version where AI-generated parts are in bold markdown.
 8.  **The 'question' and 'highlightedQuestion' fields must NOT contain the multiple-choice options.** The options must only be in the 'options' array.
@@ -71,31 +71,8 @@ const generateExamQuestionsFlow = ai.defineFlow(
         return hasFourOptions && isCorrectAnswerValid;
     });
 
-    const imageGenerationPromises = validQuestions.map(async (question) => {
-      if (question.imageDescription) {
-        try {
-          const {media} = await ai.generate({
-            model: 'googleai/gemini-2.0-flash-preview-image-generation',
-            prompt: `Generate a clear, simple, educational diagram for an exam question. Description: ${question.imageDescription}`,
-            config: {
-              responseModalities: ['TEXT', 'IMAGE'],
-            },
-          });
-          return {
-            ...question,
-            imageDataUri: media.url,
-          };
-        } catch (e) {
-          console.error('Image generation failed for:', question.imageDescription, e);
-          // Return the question without an image if generation fails
-          return question;
-        }
-      }
-      return question;
-    });
-
-    const questionsWithImages = await Promise.all(imageGenerationPromises);
-
-    return {questions: questionsWithImages};
+    // Image generation is now handled by a separate flow to speed up initial response.
+    // The client will request images on-demand.
+    return {questions: validQuestions};
   }
 );

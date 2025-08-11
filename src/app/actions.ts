@@ -4,9 +4,10 @@
 import { analyzeExamPatterns, type AnalyzeExamPatternsInput, type AnalyzeExamPatternsOutput } from "@/ai/flows/analyze-exam-patterns";
 import { generateAudioExplanation } from "@/ai/flows/generate-audio-explanation";
 import { generateExamQuestions, type GenerateExamQuestionsInput } from "@/ai/flows/generate-exam-questions";
+import { generateImageForQuestion } from "@/ai/flows/generate-question-image";
 import { solveQuestion } from "@/ai/flows/solve-question";
 import { getAnalysisForSubject as getAnalysis, getAvailableSubjects as getSubjects } from "@/lib/analysis-store";
-import type { GenerateAudioInput, GenerateAudioOutput, SolveQuestionInput, SolveQuestionOutput } from "@/types/exam-types";
+import type { GenerateAudioInput, GenerateAudioOutput, GenerateQuestionImageInput, GenerateQuestionImageOutput, SolveQuestionInput, SolveQuestionOutput } from "@/types/exam-types";
 
 export type GetAnalysisForSubjectOutput = AnalyzeExamPatternsOutput;
 
@@ -65,6 +66,17 @@ export async function handleGenerateAudio(input: GenerateAudioInput): Promise<{s
         console.error("Error generating audio:", error);
         const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
         return { success: false, error: `Failed to generate audio. ${errorMessage}` };
+    }
+}
+
+export async function handleGenerateImage(input: GenerateQuestionImageInput): Promise<{success: true, data: GenerateQuestionImageOutput} | {success: false, error: string}> {
+    try {
+        const result = await generateImageForQuestion(input);
+        return { success: true, data: result };
+    } catch (error) {
+        console.error("Error generating image:", error);
+        const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+        return { success: false, error: `Failed to generate image. ${errorMessage}` };
     }
 }
 

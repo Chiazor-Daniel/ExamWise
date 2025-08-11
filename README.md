@@ -102,6 +102,14 @@ curl -X POST https://class-fi.vercel.app/api/generate-audio \
 }'
 ```
 
+**6. Generate Image for a Question**
+```bash
+curl -X POST https://class-fi.vercel.app/api/generate-image \
+-H "Content-Type: application/json" \
+-d '{
+  "imageDescription": "A simple circuit diagram with a battery, a resistor, and a switch."
+}'
+```
 ---
 
 ## Guide for Mobile App Development (React Native)
@@ -157,7 +165,7 @@ Once deployed, your API will be available at your Vercel URL: `https://class-fi.
 #### 3. Generate Exam Questions
 
 - **Endpoint**: `POST /api/generate-questions`
-- **Description**: Generates a new mock exam based on a subject, year, and difficulty.
+- **Description**: Generates a new mock exam based on a subject, year, and difficulty. **This endpoint is optimized for speed and only returns text content.**
 - **Request Body (JSON)**:
   ```json
   {
@@ -176,7 +184,8 @@ Once deployed, your API will be available at your Vercel URL: `https://class-fi.
         body: JSON.stringify({ subject, year, difficulty }),
       });
       const examData = await response.json();
-      // `examData` will contain an array of questions
+      // `examData` will contain an array of questions, but imageDataUri will be null.
+      // See the "Generate Image for a Question" section for how to fetch images.
       setGeneratedExam(examData.questions);
     } catch (error) {
       console.error('Failed to generate exam:', error);
@@ -186,7 +195,45 @@ Once deployed, your API will be available at your Vercel URL: `https://class-fi.
 
 ---
 
-#### 4. Solve a Question
+#### 4. Generate Image for a Question (On-Demand)
+
+- **Endpoint**: `POST /api/generate-image`
+- **Description**: Generates an image for a single question. Call this for each question that has an `imageDescription`.
+- **Request Body (JSON)**:
+  ```json
+  {
+    "imageDescription": "A diagram of the human heart with labels."
+  }
+  ```
+- **Example Call (React Native - Lazy Loading)**:
+  ```javascript
+  const fetchImageForQuestion = async (question, questionIndex) => {
+    if (!question.imageDescription || question.imageDataUri) return; // Already has image or no description
+
+    try {
+      const response = await fetch('https://class-fi.vercel.app/api/generate-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageDescription: question.imageDescription }),
+      });
+      const imageData = await response.json();
+      
+      // Update your state to include the new imageDataUri for the specific question
+      setGeneratedExam(prevExam => {
+          const newQuestions = [...prevExam];
+          newQuestions[questionIndex].imageDataUri = imageData.imageDataUri;
+          return { questions: newQuestions };
+      });
+
+    } catch (error) {
+      console.error('Failed to generate image:', error);
+    }
+  };
+  ```
+
+---
+
+#### 5. Solve a Question
 
 - **Endpoint**: `POST /api/solve-question`
 - **Description**: Gets a detailed, AI-powered explanation for a specific question.
@@ -222,7 +269,7 @@ Once deployed, your API will be available at your Vercel URL: `https://class-fi.
 
 ---
 
-#### 5. Generate Audio Explanation
+#### 6. Generate Audio Explanation
 
 - **Endpoint**: `POST /api/generate-audio`
 - **Description**: Converts an explanation text into speech.

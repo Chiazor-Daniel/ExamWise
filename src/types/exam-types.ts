@@ -79,3 +79,14 @@ export const GenerateExamQuestionsOutputSchema = z.object({
 export type GenerateExamQuestionsOutput = z.infer<
   typeof GenerateExamQuestionsOutputSchema
 >;
+
+// Types for generate-question-image flow
+export const GenerateQuestionImageInputSchema = z.object({
+    imageDescription: z.string().describe("A concise description of the educational diagram to generate."),
+});
+export type GenerateQuestionImageInput = z.infer<typeof GenerateQuestionImageInputSchema>;
+
+export const GenerateQuestionImageOutputSchema = z.object({
+    imageDataUri: z.string().describe("A data URI of the generated image. Format: 'data:image/png;base64,<encoded_data>'"),
+});
+export type GenerateQuestionImageOutput = z.infer<typeof GenerateQuestionImageOutputSchema>;
