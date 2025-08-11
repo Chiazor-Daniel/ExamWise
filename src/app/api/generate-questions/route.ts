@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { handleGenerateQuestions } from '@/app/actions';
 import type { GenerateExamQuestionsInput } from '@/types/exam-types';
 
+export const maxDuration = 120; // 2 minutes
+
 type RequestBody = Omit<GenerateExamQuestionsInput, 'patternSummary'>;
 
 export async function POST(request: NextRequest) {

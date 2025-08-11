@@ -11,7 +11,8 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import { GenerateExamQuestionsInputSchema, type GenerateExamQuestionsInput, GenerateExamQuestionsOutputSchema, type GenerateExamQuestionsOutput } from '@/types/exam-types';
+import { GenerateExamQuestionsInputSchema, type GenerateExamQuestionsInput, GenerateExamQuestionsOutputSchema, type GenerateExamQuestionsOutput, type GeneratedQuestion } from '@/types/exam-types';
+import { generateImageForQuestion } from './generate-question-image';
 
 
 export async function generateExamQuestions(
@@ -52,6 +53,27 @@ Instructions:
 Output exactly 40 questions in the specified JSON format.`,
 });
 
+async function generateImagesInParallel(questions: GeneratedQuestion[]): Promise<GeneratedQuestion[]> {
+    const imagePromises = questions.map(async (question) => {
+        if (question.imageDescription) {
+            try {
+                const imageResult = await generateImageForQuestion({ imageDescription: question.imageDescription });
+                return {
+                    ...question,
+                    imageDataUri: imageResult.imageDataUri,
+                };
+            } catch (error) {
+                console.error(`Failed to generate image for question: "${question.question}". Error: ${error}`);
+                // Return the question without the image if generation fails
+                return question;
+            }
+        }
+        return question;
+    });
+    return Promise.all(imagePromises);
+}
+
+
 const generateExamQuestionsFlow = ai.defineFlow(
   {
     name: 'generateExamQuestionsFlow',
@@ -71,8 +93,8 @@ const generateExamQuestionsFlow = ai.defineFlow(
         return hasFourOptions && isCorrectAnswerValid;
     });
 
-    // Image generation is now handled by a separate flow to speed up initial response.
-    // The client will request images on-demand.
-    return {questions: validQuestions};
+    const questionsWithImages = await generateImagesInParallel(validQuestions);
+
+    return {questions: questionsWithImages};
   }
 );
