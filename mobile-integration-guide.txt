@@ -1,0 +1,174 @@
+ExamWise Mobile Integration Guide
+================================
+
+This guide explains how to properly integrate your React Native mobile app with the ExamWise backend API.
+
+1. API Base URL
+--------------
+Update your BASE_URL to point to the ExamWise backend:
+BASE_URL = 'https://exam-wise-mn3majldx-chiazor-daniels-projects.vercel.app'
+
+2. Required API Endpoints
+-----------------------
+
+a) Generate Questions (/api/generate-questions)
+   Method: POST
+   Required fields:
+   {
+     "subject": string,     // e.g., "Physics"
+     "year": number,       // e.g., 2025
+     "difficulty": string  // "Easy", "Medium", or "Hard"
+   }
+   
+   Note: Remove 'examType' from your current implementation as it's not used by the backend.
+
+b) Solve Question (/api/solve-question)
+   Method: POST
+   Required fields:
+   {
+     "question": string,
+     "options": string[],    // Array of strings only
+     "correctAnswer": string
+   }
+
+c) Generate Audio (/api/generate-audio)
+   Method: POST
+   Required fields:
+   {
+     "explanation": string
+   }
+
+3. Type Updates
+--------------
+Update your Question interface to match the backend expectations:
+
+interface Question {
+    question: string;
+    options: string[];  // Change from string[] | Array<{ text: string; label?: string }>
+    correctAnswer: string;
+}
+
+4. Request Headers
+----------------
+Include the following headers with your requests:
+
+headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+}
+
+Note: Currently, the backend API does not require authentication. If authentication is added in the future, this section will be updated with the required authentication headers.
+
+5. Error Handling
+----------------
+Implement proper error handling for all API calls:
+
+try {
+    const response = await fetch(`${BASE_URL}/endpoint`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Request failed');
+    }
+
+    const data = await response.json();
+    // Handle success
+} catch (error) {
+    console.error('Operation failed:', error);
+    Alert.alert('Error', error.message || 'An unexpected error occurred');
+}
+
+6. Required Changes
+------------------
+1. Remove the examType field from question generation
+2. Simplify the options handling to always use string[]
+3. Add proper validation for required fields
+4. Implement proper error handling as shown above
+5. Include proper headers in all requests
+
+7. Example Implementation for Generate Questions
+---------------------------------------------
+const handleBeginExam = async () => {
+    if (!selectedSubject || !examYear || !difficulty) {
+        Alert.alert('Error', 'Subject, year, and difficulty are required');
+        return;
+    }
+
+    setLoading(true);
+    try {
+        const response = await fetch(`${BASE_URL}/api/generate-questions`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                subject: selectedSubject,
+                year: parseInt(examYear),
+                difficulty: difficulty
+            }),
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to generate questions');
+        }
+
+        const examData = await response.json();
+        const examConfig = {
+            subject: selectedSubject,
+            year: examYear,
+            difficulty: difficulty,
+            timerDuration: timerDuration * 60,
+            questions: examData.questions
+        };
+
+        onBeginExam(examConfig);
+    } catch (error) {
+        console.error('Failed to generate exam:', error);
+        Alert.alert('Error', error.message || 'Failed to generate exam');
+    } finally {
+        setLoading(false);
+    }
+};
+
+8. Response Handling
+-------------------
+Each endpoint will return data in the following format:
+
+Generate Questions:
+{
+    questions: Array<{
+        question: string,
+        options: string[],
+        correctAnswer: string
+    }>
+}
+
+Solve Question:
+{
+    explanation: string,
+    correctAnswer: string
+}
+
+Generate Audio:
+{
+    audioDataUri: string  // Base64 encoded audio data
+}
+
+9. Additional Recommendations
+---------------------------
+1. Implement retry logic for failed requests
+2. Add loading states for all API calls
+3. Cache responses when appropriate
+4. Add error retry mechanism
+5. Add offline support with fallback data
+6. Implement proper input validation before making API calls
+
+For any questions or issues, refer to the backend API documentation or contact the backend team.

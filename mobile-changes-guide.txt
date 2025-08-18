@@ -1,0 +1,174 @@
+ExamWise Mobile App Changes Guide
+================================
+
+This guide outlines the specific changes needed for the React Native mobile app to work with the local ExamWise backend.
+
+1. Base URL Configuration
+------------------------
+For local development:
+```typescript
+const BASE_URL = 'http://localhost:9002';
+```
+
+2. Remove Authentication
+------------------------
+Remove all authentication-related code since the backend doesn't require it:
+
+a) In getSolution function:
+```typescript
+// REMOVE this:
+'Authorization': `Bearer ${token}`
+
+// Use this instead:
+const response = await fetch(`${BASE_URL}/api/solve-question`, {
+    method: 'POST',
+    headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+    },
+    body: JSON.stringify(requestPayload),
+});
+```
+
+3. Generate Questions Request
+---------------------------
+Remove examType from the request body as it's not used by the backend:
+
+```typescript
+// CHANGE THIS:
+body: JSON.stringify({
+    subject: selectedSubject,
+    examType: selectedExamType,  // Remove this
+    year: parseInt(examYear),
+    difficulty: difficulty
+})
+
+// TO THIS:
+body: JSON.stringify({
+    subject: selectedSubject,
+    year: parseInt(examYear),
+    difficulty: difficulty
+})
+```
+
+4. ExamConfig Object Update
+--------------------------
+Update the examConfig object to match backend expectations:
+
+```typescript
+const examConfig = {
+    subject: selectedSubject,
+    year: examYear,
+    difficulty: difficulty,
+    timerDuration: timerDuration * 60,
+    questions: examQuestions
+};
+```
+
+5. API Request Formats
+---------------------
+Make sure all API requests follow these formats:
+
+a) Generate Questions:
+```typescript
+{
+    "subject": string,     // e.g., "Physics"
+    "year": number,       // e.g., 2025
+    "difficulty": string  // "Easy", "Medium", or "Hard"
+}
+```
+
+b) Solve Question:
+```typescript
+{
+    "question": string,
+    "options": string[],
+    "correctAnswer": string
+}
+```
+
+c) Generate Audio:
+```typescript
+{
+    "explanation": string
+}
+```
+
+6. Testing Steps
+---------------
+1. Start your local backend server (should be running on port 9002)
+2. Test each endpoint:
+   - /api/subjects (GET)
+   - /api/generate-questions (POST)
+   - /api/solve-question (POST)
+   - /api/generate-audio (POST)
+3. Verify response formats match what your app expects
+4. Test error scenarios with your fallback mock data
+
+7. Common Headers
+---------------
+Use these headers for all requests:
+```typescript
+headers: {
+    'Content-Type': 'application/json',
+    'Accept': 'application/json'
+}
+```
+
+8. Error Handling
+---------------
+Keep your current error handling with mock data fallbacks:
+```typescript
+if (response.ok) {
+    const examData = await response.json();
+    examQuestions = examData.questions || [];
+} else {
+    // Your mock data fallback is good for development
+    examQuestions = [
+        // ... your mock questions ...
+    ];
+}
+```
+
+9. Response Types
+---------------
+Expected response formats:
+
+a) Generate Questions Response:
+```typescript
+{
+    questions: Array<{
+        question: string,
+        options: string[],
+        correctAnswer: string
+    }>
+}
+```
+
+b) Solve Question Response:
+```typescript
+{
+    explanation: string,
+    correctAnswer: string
+}
+```
+
+c) Generate Audio Response:
+```typescript
+{
+    audioDataUri: string  // Base64 encoded audio data
+}
+```
+
+Notes:
+- Keep the mock data fallbacks during development
+- Make sure to test with actual backend responses
+- The backend doesn't require authentication, so you can remove all auth-related code
+- All endpoints return JSON responses
+- Error responses will include a message in the format: { error: string }
+
+For any issues:
+1. Check the backend server is running (http://localhost:9002)
+2. Verify request formats match exactly
+3. Check network tab for any request/response issues
+4. Console.log response data to verify formats
