@@ -9,14 +9,16 @@
  * - GenerateExamQuestionsOutput - The return type for the generateExamQuestions function.
  */
 
-import {ai} from '@/ai/genkit';
+import {questionGenAI as ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import { GenerateExamQuestionsInputSchema, type GenerateExamQuestionsInput, GenerateExamQuestionsOutputSchema, type GenerateExamQuestionsOutput, type GeneratedQuestion } from '@/types/exam-types';
 import { generateImageForQuestion } from './generate-question-image';
 
 
+const QUESTIONS_PER_BATCH = 10;
+
 export async function generateExamQuestions(
-  input: GenerateExamQuestionsInput
+  input: GenerateExamQuestionsInput & { batchSize?: number; batchNumber?: number; }
 ): Promise<GenerateExamQuestionsOutput> {
   return generateExamQuestionsFlow(input);
 }
@@ -53,24 +55,29 @@ Instructions:
 Output exactly 40 questions in the specified JSON format.`,
 });
 
-async function generateImagesInParallel(questions: GeneratedQuestion[]): Promise<GeneratedQuestion[]> {
-    const imagePromises = questions.map(async (question) => {
-        if (question.imageDescription) {
+async function generateImagesInBatches(questions: GeneratedQuestion[]): Promise<GeneratedQuestion[]> {
+    const questionsNeedingImages = questions.filter(q => q.imageDescription);
+    const batchSize = 3; // Process 3 images at a time
+    const results = [...questions];
+
+    for (let i = 0; i < questionsNeedingImages.length; i += batchSize) {
+        const batch = questionsNeedingImages.slice(i, i + batchSize);
+        const imagePromises = batch.map(async (question) => {
             try {
-                const imageResult = await generateImageForQuestion({ imageDescription: question.imageDescription });
-                return {
-                    ...question,
-                    imageDataUri: imageResult.imageDataUri,
-                };
+                const imageResult = await generateImageForQuestion({ imageDescription: question.imageDescription! });
+                const index = results.findIndex(q => q.question === question.question);
+                if (index !== -1) {
+                    results[index] = { ...results[index], imageDataUri: imageResult.imageDataUri };
+                }
             } catch (error) {
-                console.error(`Failed to generate image for question: "${question.question}". Error: ${error}`);
-                // Return the question without the image if generation fails
-                return question;
+                console.error(`Failed to generate image for question. Error: ${error}`);
+                // Question remains without image if generation fails
             }
-        }
-        return question;
-    });
-    return Promise.all(imagePromises);
+        });
+        await Promise.all(imagePromises);
+    }
+
+    return results;
 }
 
 
@@ -93,7 +100,7 @@ const generateExamQuestionsFlow = ai.defineFlow(
         return hasFourOptions && isCorrectAnswerValid;
     });
 
-    const questionsWithImages = await generateImagesInParallel(validQuestions);
+    const questionsWithImages = await generateImagesInBatches(validQuestions);
 
     return {questions: questionsWithImages};
   }

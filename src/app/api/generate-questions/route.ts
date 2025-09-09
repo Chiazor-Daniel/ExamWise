@@ -5,7 +5,10 @@ import type { GenerateExamQuestionsInput } from '@/types/exam-types';
 
 export const maxDuration = 120; // 2 minutes
 
-type RequestBody = Omit<GenerateExamQuestionsInput, 'patternSummary'>;
+type RequestBody = Omit<GenerateExamQuestionsInput, 'patternSummary'> & {
+    batchSize?: number;
+    batchNumber?: number;
+};
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,7 +18,14 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Missing required fields: subject, year, and difficulty must be provided.' }, { status: 400 });
     }
 
-    const result = await handleGenerateQuestions(body);
+    const batchSize = body.batchSize || 10; // Default to 10 questions per batch
+    const batchNumber = body.batchNumber || 0;
+    
+    const result = await handleGenerateQuestions({
+        ...body,
+        batchSize,
+        batchNumber
+    });
 
     if (result.success) {
       return NextResponse.json(result.data);

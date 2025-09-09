@@ -5,7 +5,7 @@
  * - generateAudioExplanation - A function that handles the text-to-speech process.
  */
 
-import { ai } from '@/ai/genkit';
+import { audioGenAI as ai } from '@/ai/genkit';
 import { googleAI } from '@genkit-ai/googleai';
 import wav from 'wav';
 import {

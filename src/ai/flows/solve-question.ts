@@ -6,14 +6,25 @@
  * - solveQuestion - A function that provides a detailed solution to a question.
  */
 
-import {ai} from '@/ai/genkit';
+import {solveQuestionAI as ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import { SolveQuestionInputSchema, type SolveQuestionInput, SolveQuestionOutputSchema, type SolveQuestionOutput } from '@/types/exam-types';
+import { withRetry } from '@/lib/retry';
 
 
 // Define the main exported function
 export async function solveQuestion(input: SolveQuestionInput): Promise<SolveQuestionOutput> {
-  return solveQuestionFlow(input);
+  return withRetry(
+    () => solveQuestionFlow(input),
+    {
+      maxRetries: 4,
+      timeout: 45000, // 45 second timeout per attempt
+      initialDelay: 2000, // Start with a 2 second delay between retries
+      onRetry: (error, attempt) => {
+        console.log(`Retry attempt ${attempt} for question solution due to: ${error.message}`);
+      }
+    }
+  );
 }
 
 // Define the text explanation prompt

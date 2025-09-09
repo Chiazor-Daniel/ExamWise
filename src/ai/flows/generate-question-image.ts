@@ -6,7 +6,7 @@
  * - generateImageForQuestion - A function that handles the image generation process.
  */
 
-import { ai } from '@/ai/genkit';
+import { imageGenAI as ai } from '@/ai/genkit';
 import { GenerateQuestionImageInputSchema, GenerateQuestionImageOutputSchema, type GenerateQuestionImageInput, type GenerateQuestionImageOutput } from '@/types/exam-types';
 
 export async function generateImageForQuestion(input: GenerateQuestionImageInput): Promise<GenerateQuestionImageOutput> {

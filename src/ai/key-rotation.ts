@@ -1,38 +1,57 @@
 /**
- * @fileOverview Handles API key rotation for Google AI services
+ * @fileOverview Handles API key management for different AI operations
  */
+
+export type OperationType = 'GENERATE_QUESTIONS' | 'SOLVE_QUESTION' | 'GENERATE_AUDIO' | 'ANALYZE_PATTERNS' | 'GENERATE_IMAGE';
+
+// Define which operations use which keys
+const operationKeyMap: Record<OperationType, 'PRIMARY' | 'SECONDARY'> = {
+    GENERATE_QUESTIONS: 'PRIMARY',
+    SOLVE_QUESTION: 'SECONDARY',
+    GENERATE_AUDIO: 'SECONDARY',
+    ANALYZE_PATTERNS: 'PRIMARY',
+    GENERATE_IMAGE: 'PRIMARY'
+};
 
 export class KeyRotation {
     private readonly keys: string[];
-    private currentIndex: number = 0;
+    private currentIndex = 0;
+    private primaryUsageCount = 0;
+    private secondaryUsageCount = 0;
+    private readonly usageLimit = 60; // Reset count after 60 uses
 
-    constructor(keys: string[]) {
-        // Filter out empty or invalid keys
-        this.keys = keys.filter(key => typeof key === 'string' && key.trim().length > 0);
+    constructor() {
+        // Initialize with all available API keys
+        this.keys = [
+            process.env.GOOGLE_API_KEY || '',
+            process.env.GOOGLE_API_KEY2 || ''
+        ].filter(key => key.length > 0);
         
-        // During build time, we'll allow empty keys array but log a warning
-        if (this.keys.length === 0) {
-            console.warn('Warning: No valid API keys provided. This is OK during build time but will cause errors in production.');
-            // Add a placeholder key to prevent errors during build
-            this.keys = ['BUILD_TIME_PLACEHOLDER'];
+        // Validate keys during instantiation
+        this.validateKeys();
+    }
+
+    private validateKeys(): void {
+        if (this.keys.length < 2) {
+            throw new Error('Both PRIMARY (GOOGLE_API_KEY) and SECONDARY (GOOGLE_API_KEY2) API keys are required.');
         }
     }
 
-    public getCurrentKey(): string {
-        // If we're using the placeholder key, check for real keys first
-        if (this.keys[0] === 'BUILD_TIME_PLACEHOLDER') {
-            const runtimeKeys = [
-                process.env.GOOGLE_API_KEY,
-                process.env.GOOGLE_API_KEY_1,
-                process.env.GOOGLE_API_KEY_2,
-                process.env.GOOGLE_API_KEY_3,
-            ].filter(key => typeof key === 'string' && key.trim().length > 0);
-
-            if (runtimeKeys.length === 0) {
-                throw new Error('No valid API keys available at runtime');
-            }
-            this.keys = runtimeKeys;
+    public getKeyForOperation(operation: OperationType): string {
+        const keyType = operationKeyMap[operation];
+        const key = keyType === 'PRIMARY' ? this.keys[0] : this.keys[1];
+        
+        // Update usage count
+        if (keyType === 'PRIMARY') {
+            this.primaryUsageCount = (this.primaryUsageCount + 1) % this.usageLimit;
+        } else {
+            this.secondaryUsageCount = (this.secondaryUsageCount + 1) % this.usageLimit;
         }
+
+        return key;
+    }
+
+    public getCurrentKey(): string {
         return this.keys[this.currentIndex];
     }
 
@@ -54,14 +73,14 @@ export class KeyRotation {
         }
         return this.getCurrentKey();
     }
+
+    public getUsageStats(): { primary: number; secondary: number } {
+        return {
+            primary: this.primaryUsageCount,
+            secondary: this.secondaryUsageCount
+        };
+    }
 }
 
-// Initialize with API keys, allowing empty values during build time
-const apiKeys = [
-    process.env.GOOGLE_API_KEY || '',
-    process.env.GOOGLE_API_KEY_1 || '',
-    process.env.GOOGLE_API_KEY_2 || '',
-    process.env.GOOGLE_API_KEY_3 || '',
-] as string[];
-
-export const keyRotation = new KeyRotation(apiKeys);
+// Export a singleton instance
+export const keyRotation = new KeyRotation();

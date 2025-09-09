@@ -1,8 +1,8 @@
-import type { AnalyzeExamPatternsOutput } from '@/ai/flows/analyze-exam-patterns';
+import type { SubjectAnalysis } from '@/types/analysis-types';
 import analysisCache from '@/data/analysis-cache.json';
 
 // The cache is now a typed version of the imported JSON file.
-const typedCache: Record<string, AnalyzeExamPatternsOutput> = analysisCache;
+const typedCache: Record<string, Omit<SubjectAnalysis, 'subject'>> = analysisCache;
 
 /**
  * Retrieves the analysis for a given subject directly from the imported JSON cache.
@@ -10,8 +10,10 @@ const typedCache: Record<string, AnalyzeExamPatternsOutput> = analysisCache;
  * @param subject The subject to retrieve analysis for.
  * @returns The analysis output or null if not found.
  */
-export async function getAnalysisForSubject(subject: string): Promise<AnalyzeExamPatternsOutput | null> {
-    return typedCache[subject] || null;
+export async function getAnalysisForSubject(subject: string): Promise<SubjectAnalysis | null> {
+    const analysis = typedCache[subject];
+    if (!analysis) return null;
+    return { ...analysis, subject };
 }
 
 /**
